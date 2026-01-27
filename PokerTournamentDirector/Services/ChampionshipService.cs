@@ -227,32 +227,21 @@ namespace PokerTournamentDirector.Services
             // Récupérer toutes les performances du joueur
             var performances = await GetPlayerPerformancesAsync(championshipId, playerId);
 
-            // Calculer points selon le mode
-            int totalPoints = 0;
-            int matchesPlayed = performances.Count;
-            int victories = 0;
-            int top3 = 0;
-            int totalBounties = 0;
-            decimal totalWinnings = 0;
-            var positions = new List<int>();
+            // Appliquer le mode de comptage et récupérer les performances conservées
+            var countingResult = ApplyCountingMode(championship, performances);
 
-            foreach (var perf in performances)
-            {
-                int matchPoints = CalculateMatchPoints(championship, perf);
-                totalPoints += matchPoints;
+            int totalPoints = countingResult.TotalPoints;
+            var retainedPerformances = countingResult.RetainedPerformances;
 
-                if (perf.Position == 1) victories++;
-                if (perf.Position <= 3) top3++;
+            // Stats basées UNIQUEMENT sur les performances conservées
+            int matchesPlayed = retainedPerformances.Count;
+            int victories = retainedPerformances.Count(p => p.Position == 1);
+            int top3 = retainedPerformances.Count(p => p.Position <= 3);
+            int totalBounties = retainedPerformances.Sum(p => p.Bounties);
+            decimal totalWinnings = retainedPerformances.Sum(p => p.Winnings);
+            var positions = retainedPerformances.Select(p => p.Position).ToList();
 
-                totalBounties += perf.Bounties;
-                totalWinnings += perf.Winnings;
-                positions.Add(perf.Position);
-            }
-
-            // Appliquer comptage sélectif
-            totalPoints = ApplyCountingMode(championship, performances, totalPoints);
-
-            // Appliquer bonus
+            // Appliquer bonus bounties (uniquement sur tournois conservés)
             if (championship.CountBounties)
             {
                 totalPoints += totalBounties * championship.PointsPerBounty;
@@ -281,6 +270,13 @@ namespace PokerTournamentDirector.Services
 
             await _context.SaveChangesAsync();
             return standing;
+        }
+
+        // NOUVELLE CLASSE HELPER pour retourner à la fois les points et les performances conservées
+        private class CountingResult
+        {
+            public int TotalPoints { get; set; }
+            public List<PlayerPerformance> RetainedPerformances { get; set; } = new();
         }
 
         private int CalculateMatchPoints(Championship championship, PlayerPerformance perf)
@@ -356,40 +352,90 @@ namespace PokerTournamentDirector.Services
             return (int)(percentage * championship.ProportionalTotalPoints);
         }
 
-        private int ApplyCountingMode(Championship championship, List<PlayerPerformance> performances, int totalPoints)
+        private CountingResult ApplyCountingMode(Championship championship, List<PlayerPerformance> performances)
         {
+            var result = new CountingResult();
+            List<PlayerPerformance> retained = performances; // Par défaut, tous conservés
+
             switch (championship.CountingMode)
             {
                 case ChampionshipCountingMode.BestXOfSeason:
                     if (championship.BestXOfSeason.HasValue && performances.Count > championship.BestXOfSeason.Value)
                     {
-                        var bestPerfs = performances
+                        retained = performances
                             .OrderByDescending(p => CalculateMatchPoints(championship, p))
                             .Take(championship.BestXOfSeason.Value)
                             .ToList();
-
-                        return bestPerfs.Sum(p => CalculateMatchPoints(championship, p));
                     }
                     break;
 
-                // TODO: BestXPerPeriod nécessite logique de groupement par mois/trimestre
+                case ChampionshipCountingMode.BestXPerPeriod:
+                    retained = ApplyBestXPerPeriod(championship, performances);
+                    break;
             }
 
-            // Exclure pires résultats
+            // Exclure les pires résultats (après sélection des meilleurs)
             if (championship.ExcludeWorstX.HasValue && championship.ExcludeWorstX.Value > 0)
             {
-                if (performances.Count > championship.ExcludeWorstX.Value)
+                if (retained.Count > championship.ExcludeWorstX.Value)
                 {
-                    var worstPoints = performances
-                        .OrderBy(p => CalculateMatchPoints(championship, p))
-                        .Take(championship.ExcludeWorstX.Value)
-                        .Sum(p => CalculateMatchPoints(championship, p));
-
-                    totalPoints -= worstPoints;
+                    retained = retained
+                        .OrderByDescending(p => CalculateMatchPoints(championship, p))
+                        .Skip(championship.ExcludeWorstX.Value)
+                        .ToList();
                 }
             }
 
-            return totalPoints;
+            result.RetainedPerformances = retained;
+            result.TotalPoints = retained.Sum(p => CalculateMatchPoints(championship, p));
+
+            return result;
+        }
+
+        private List<PlayerPerformance> ApplyBestXPerPeriod(Championship championship, List<PlayerPerformance> performances)
+        {
+            int? bestXCount = null;
+            Func<DateTime, string> getPeriodKey = null;
+
+            if (championship.BestXPerMonth.HasValue)
+            {
+                bestXCount = championship.BestXPerMonth.Value;
+                getPeriodKey = date => $"{date.Year}-{date.Month:D2}";
+            }
+            else if (championship.BestXPerQuarter.HasValue)
+            {
+                bestXCount = championship.BestXPerQuarter.Value;
+                getPeriodKey = date => $"{date.Year}-Q{(date.Month - 1) / 3 + 1}";
+            }
+            else
+            {
+                return performances; // Pas de config => tous conservés
+            }
+
+            var matchDates = _context.ChampionshipMatches
+                .Where(m => m.ChampionshipId == championship.Id && performances.Select(p => p.MatchId).Contains(m.Id))
+                .Select(m => new { m.Id, m.MatchDate })
+                .ToList()
+                .ToDictionary(m => m.Id, m => m.MatchDate);
+
+            var performancesByPeriod = performances
+                .Where(p => matchDates.ContainsKey(p.MatchId))
+                .GroupBy(p => getPeriodKey(matchDates[p.MatchId]))
+                .ToList();
+
+            var retainedPerformances = new List<PlayerPerformance>();
+
+            foreach (var periodGroup in performancesByPeriod)
+            {
+                var bestOfPeriod = periodGroup
+                    .OrderByDescending(p => CalculateMatchPoints(championship, p))
+                    .Take(bestXCount.Value)
+                    .ToList();
+
+                retainedPerformances.AddRange(bestOfPeriod);
+            }
+
+            return retainedPerformances;
         }
 
         private async Task AssignPositionsAsync(int championshipId)
