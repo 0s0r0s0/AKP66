@@ -30,16 +30,6 @@
             <Setter Property="Margin" Value="0,5,0,5"/>
         </Style>
 
-        <Style x:Key="TextBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="#0f3460"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#00ff88"/>
-            <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="Padding" Value="10"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Height" Value="40"/>
-        </Style>
-
         <Style x:Key="DataGridStyle" TargetType="DataGrid">
             <Setter Property="Background" Value="#16213e"/>
             <Setter Property="Foreground" Value="White"/>
@@ -80,12 +70,12 @@
 
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="2.5*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- LISTE DES JOUEURS -->
-        <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+        <Border Grid.Column="0" Background="#16213e" CornerRadius="15" Padding="20" Margin="10" BorderBrush="#0f3460" BorderThickness="2">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -96,12 +86,18 @@
 
                 <!-- HEADER -->
                 <Grid Grid.Row="0">
-                    <TextBlock Text="👥 Base de Joueurs" Style="{StaticResource TitleStyle}"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="👥 Membres du Club" FontSize="28" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Border Background="#e94560" CornerRadius="20" Padding="12,6" Margin="0,0,10,0" Visibility="{Binding AlertCount, Converter={StaticResource ZeroToCollapsedConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚠️" FontSize="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="{Binding AlertCount}" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text=" alerte(s)" FontSize="14" Foreground="White" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                            </StackPanel>
+                        </Border>
                         <TextBlock Text="{Binding ActivePlayers}" FontSize="20" FontWeight="Bold" Foreground="#00ff88" VerticalAlignment="Center"/>
                         <TextBlock Text=" actifs / " FontSize="16" Foreground="#a0a0a0" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding TotalPlayers}" FontSize="20" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                        <TextBlock Text=" total" FontSize="16" Foreground="#a0a0a0" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
 
@@ -112,204 +108,291 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- RECHERCHE -->
-                    <Grid Grid.Column="0">
-                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                Style="{StaticResource TextBoxStyle}"
-                                Margin="0,0,10,0">
-                            <TextBox.InputBindings>
-                                <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
-                            </TextBox.InputBindings>
-                        </TextBox>
-                        <TextBlock Text="🔍 Rechercher..." 
-                                  IsHitTestVisible="False"
-                                  Foreground="#666"
-                                  FontSize="14"
-                                  Margin="15,0,0,0"
-                                  VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding SearchText}" Value="">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
+                    <TextBox Grid.Column="0" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                            Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2"
+                            Padding="10" FontSize="14" Height="40" Margin="0,0,10,0">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
 
-                    <!-- FILTRES -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <CheckBox Content="Actifs uniquement" 
-                                 IsChecked="{Binding ShowActiveOnly}"
-                                 Foreground="White"
-                                 VerticalAlignment="Center"
-                                 Margin="0,0,15,0"/>
-                        <Button Content="🔄 Actualiser" 
-                               Command="{Binding LoadPlayersCommand}"
-                               Width="120" Height="40"
-                               Background="#0f3460" 
-                               Foreground="White"/>
+                        <CheckBox Content="Actifs uniquement" IsChecked="{Binding ShowActiveOnly}"
+                                 Foreground="White" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        <Button Content="🔄" Command="{Binding LoadPlayersCommand}"
+                               Width="40" Height="40" Background="#0f3460" Foreground="White" FontSize="18"/>
                     </StackPanel>
                 </Grid>
 
                 <!-- DATAGRID -->
-                <DataGrid Grid.Row="2" 
-                         ItemsSource="{Binding Players}"
-                         SelectedItem="{Binding SelectedPlayer}"
-                         Style="{StaticResource DataGridStyle}">
+                <DataGrid Grid.Row="2" ItemsSource="{Binding Players}" SelectedItem="{Binding SelectedPlayer}"
+                         Background="#16213e" Foreground="White" BorderBrush="#0f3460" BorderThickness="2"
+                         RowBackground="#16213e" AlternatingRowBackground="#1a1a2e"
+                         GridLinesVisibility="None" HeadersVisibility="Column"
+                         AutoGenerateColumns="False" CanUserAddRows="False"
+                         SelectionMode="Single" FontSize="12">
+
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Nom" Binding="{Binding Name}" Width="200"/>
-                        <DataGridTextColumn Header="Pseudo" Binding="{Binding Nickname}" Width="150"/>
-                        <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="200"/>
-                        <DataGridTextColumn Header="Téléphone" Binding="{Binding Phone}" Width="130"/>
-                        <DataGridTextColumn Header="Tournois" Binding="{Binding TotalTournamentsPlayed}" Width="80"/>
-                        <DataGridTextColumn Header="Victoires" Binding="{Binding TotalWins}" Width="80"/>
-                        <DataGridTextColumn Header="ITM" Binding="{Binding TotalITM}" Width="70"/>
-                        <DataGridTextColumn Header="Gains (€)" Binding="{Binding TotalWinnings, StringFormat='{}{0:N0}'}" Width="100"/>
-                        <DataGridTemplateColumn Header="Statut" Width="80">
+                        <DataGridTextColumn Header="Nom" Binding="{Binding Name}" Width="140"/>
+                        <DataGridTextColumn Header="Pseudo" Binding="{Binding Nickname}" Width="100"/>
+                        <DataGridTextColumn Header="Téléphone" Binding="{Binding Phone}" Width="110"/>
+                        <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="180"/>
+                        <DataGridTextColumn Header="Ville" Binding="{Binding City}" Width="100"/>
+                        <DataGridTextColumn Header="Inscription" Binding="{Binding RegistrationDate, StringFormat=dd/MM/yyyy}" Width="95"/>
+                        <DataGridTextColumn Header="Dernier Tournoi" Binding="{Binding LastTournamentDate, StringFormat=dd/MM/yyyy}" Width="110"/>
+
+                        <DataGridTemplateColumn Header="Cotisation" Width="80">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding IsActive, Converter={StaticResource BoolToActiveConverter}}"
-                                              Foreground="{Binding IsActive, Converter={StaticResource BoolToActiveColorConverter}}"
-                                              FontWeight="Bold"
-                                              HorizontalAlignment="Center"/>
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0}">
+                                                <Binding Path="PaymentStatus" Converter="{StaticResource PaymentStatusToIconConverter}"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                        <TextBlock.Foreground>
+                                            <Binding Path="PaymentStatus" Converter="{StaticResource PaymentStatusToColorConverter}"/>
+                                        </TextBlock.Foreground>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="Échéance" Binding="{Binding NextDueDate, StringFormat=dd/MM/yyyy}" Width="90"/>
+                        <DataGridTextColumn Header="Contribution" Binding="{Binding Paid, StringFormat={}{0}€}" Width="90"/>
+
+                        <DataGridTemplateColumn Header="Statut" Width="70">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Status, Converter={StaticResource PlayerStatusConverter}}"
+                                              Foreground="{Binding Status, Converter={StaticResource PlayerStatusColorConverter}}"
+                                              FontWeight="Bold" HorizontalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="⚠️" Width="60">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource PlayerAlertConverter}}"
+                                              FontSize="18" HorizontalAlignment="Center"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
+
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Height" Value="35"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Converter={StaticResource PlayerHasAlertConverter}}" Value="True">
+                                    <Setter Property="Background" Value="#4d2020"/>
+                                </DataTrigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#00ff88"/>
+                                    <Setter Property="Foreground" Value="#1a1a2e"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#0f3460"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
                 </DataGrid>
 
-                <!-- ACTIONS BOUTONS -->
+                <!-- BOUTONS -->
                 <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
-                    <Button Content="➕ Nouveau" 
-                           Command="{Binding NewPlayerCommand}"
-                           Width="140" Height="50"
-                           Background="#00ff88" 
-                           Foreground="#1a1a2e"
-                           FontSize="16"
-                           FontWeight="Bold"
-                           Margin="5"/>
+                    <Button Content="➕ Nouveau" Command="{Binding NewPlayerCommand}"
+                           Width="130" Height="45" Background="#00ff88" Foreground="#1a1a2e"
+                           FontSize="15" FontWeight="Bold" Margin="5"/>
 
-                    <Button Content="✏️ Modifier" 
-                           Command="{Binding EditPlayerCommand}"
-                           Width="140" Height="50"
-                           Background="#0f3460" 
-                           Foreground="White"
-                           FontSize="16"
-                           Margin="5"
+                    <Button Content="✏️ Modifier" Command="{Binding EditPlayerCommand}"
+                           Width="130" Height="45" Background="#0f3460" Foreground="White"
+                           FontSize="15" Margin="5"
                            IsEnabled="{Binding SelectedPlayer, Converter={StaticResource NullToBoolConverter}}"/>
 
-                    <Button Content="🗑️ Désactiver" 
-                           Command="{Binding DeletePlayerCommand}"
-                           Width="140" Height="50"
-                           Background="#e94560" 
-                           Foreground="White"
-                           FontSize="16"
-                           Margin="5"
+                    <Button Content="💰 Payer" Command="{Binding OpenPaymentCommand}"
+                           Width="130" Height="45" Background="#ffd700" Foreground="#1a1a2e"
+                           FontSize="15" FontWeight="Bold" Margin="5"
                            IsEnabled="{Binding SelectedPlayer, Converter={StaticResource NullToBoolConverter}}"/>
 
-                    <Button Content="📥 Importer CSV" 
-                           Command="{Binding ImportCsvCommand}"
-                           Width="150" Height="50"
-                           Background="#ffd700" 
-                           Foreground="#1a1a2e"
-                           FontSize="16"
-                           Margin="5"/>
+                    <Button Content="📜 Historique" Command="{Binding ShowHistoryCommand}"
+                           Width="130" Height="45" Background="#0f3460" Foreground="White"
+                           FontSize="15" Margin="5"
+                           IsEnabled="{Binding SelectedPlayer, Converter={StaticResource NullToBoolConverter}}"/>
 
-                    <Button Content="📤 Exporter CSV" 
-                           Command="{Binding ExportCsvCommand}"
-                           Width="150" Height="50"
-                           Background="#ffd700" 
-                           Foreground="#1a1a2e"
-                           FontSize="16"
-                           Margin="5"/>
+                    <Button Content="📥 Import CSV" Command="{Binding ImportCsvCommand}"
+                           Width="130" Height="45" Background="#16213e" Foreground="White"
+                           FontSize="14" Margin="5"/>
+
+                    <Button Content="📤 Export CSV" Command="{Binding ExportCsvCommand}"
+                           Width="130" Height="45" Background="#16213e" Foreground="White"
+                           FontSize="14" Margin="5"/>
+
+                    <Button Content="🗑️ Désactiver" Command="{Binding DeletePlayerCommand}"
+                           Width="130" Height="45" Background="#e94560" Foreground="White"
+                           FontSize="15" Margin="5"
+                           IsEnabled="{Binding SelectedPlayer, Converter={StaticResource NullToBoolConverter}}"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- FORMULAIRE ÉDITION -->
-        <Border Grid.Column="1" Style="{StaticResource CardStyle}"
-               Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibleConverter}}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- PANNEAU DROIT -->
+        <Grid Grid.Column="1">
+            <!-- FORMULAIRE ÉDITION -->
+            <Border Background="#16213e" CornerRadius="15" Padding="20" Margin="10" BorderBrush="#0f3460" BorderThickness="2"
+                   Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <!-- TITRE -->
-                <TextBlock Grid.Row="0" Style="{StaticResource TitleStyle}">
-                    <TextBlock.Text>
-                        <MultiBinding StringFormat="{}✏️ {0}">
-                            <Binding Path="SelectedPlayer" Converter="{StaticResource PlayerEditTitleConverter}"/>
-                        </MultiBinding>
-                    </TextBlock.Text>
-                </TextBlock>
+                    <TextBlock Grid.Row="0" Text="✏️ Fiche Joueur" FontSize="24" FontWeight="Bold" Foreground="White" Margin="0,0,0,20"/>
 
-                <!-- CHAMPS -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="Nom *" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding EditName}" Style="{StaticResource TextBoxStyle}"/>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Nom *" Foreground="#a0a0a0" FontSize="13" Margin="0,5"/>
+                            <TextBox Text="{Binding EditName}" Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2" Padding="10" Height="38" FontSize="14"/>
 
-                        <TextBlock Text="Pseudo" Style="{StaticResource LabelStyle}" Margin="0,15,0,5"/>
-                        <TextBox Text="{Binding EditNickname}" Style="{StaticResource TextBoxStyle}"/>
+                            <TextBlock Text="Pseudo" Foreground="#a0a0a0" FontSize="13" Margin="0,12,0,5"/>
+                            <TextBox Text="{Binding EditNickname}" Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2" Padding="10" Height="38" FontSize="14"/>
 
-                        <TextBlock Text="Email" Style="{StaticResource LabelStyle}" Margin="0,15,0,5"/>
-                        <TextBox Text="{Binding EditEmail}" Style="{StaticResource TextBoxStyle}"/>
+                            <TextBlock Text="Téléphone" Foreground="#a0a0a0" FontSize="13" Margin="0,12,0,5"/>
+                            <TextBox Text="{Binding EditPhone}" Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2" Padding="10" Height="38" FontSize="14"/>
 
-                        <TextBlock Text="Téléphone" Style="{StaticResource LabelStyle}" Margin="0,15,0,5"/>
-                        <TextBox Text="{Binding EditPhone}" Style="{StaticResource TextBoxStyle}"/>
+                            <TextBlock Text="Email" Foreground="#a0a0a0" FontSize="13" Margin="0,12,0,5"/>
+                            <TextBox Text="{Binding EditEmail}" Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2" Padding="10" Height="38" FontSize="14"/>
 
-                        <TextBlock Text="Notes" Style="{StaticResource LabelStyle}" Margin="0,15,0,5"/>
-                        <TextBox Text="{Binding EditNotes}" 
-                                Style="{StaticResource TextBoxStyle}"
-                                Height="120"
-                                TextWrapping="Wrap"
-                                AcceptsReturn="True"
-                                VerticalScrollBarVisibility="Auto"/>
+                            <TextBlock Text="Ville" Foreground="#a0a0a0" FontSize="13" Margin="0,12,0,5"/>
+                            <TextBox Text="{Binding EditCity}" Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2" Padding="10" Height="38" FontSize="14"/>
+
+                            <Border Background="#0f3460" CornerRadius="8" Padding="12" Margin="0,20,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="💰 Cotisation" FontSize="16" FontWeight="Bold" Foreground="#00ff88" Margin="0,0,0,12"/>
+
+                                    <TextBlock Text="Type de paiement" Foreground="#a0a0a0" FontSize="13" Margin="0,5"/>
+                                    <ComboBox ItemsSource="{Binding PaymentTypes}" SelectedIndex="{Binding SelectedPaymentTypeIndex}"
+                                              Style="{StaticResource ComboBoxStyle}"/>
+
+                                    <StackPanel Visibility="{Binding ShowInstallmentOptions, Converter={StaticResource BoolToVisibilityConverter}}" Margin="0,12,0,0">
+                                        <TextBlock Text="Nombre de mensualités" Foreground="#a0a0a0" FontSize="13" Margin="0,5"/>
+                                        <ComboBox ItemsSource="{Binding InstallmentOptions}" SelectedIndex="{Binding SelectedInstallmentIndex}"
+                                            Style="{StaticResource ComboBoxStyle}"/>
+                                    </StackPanel>
+
+                                    <Border Background="#1a1a2e" CornerRadius="6" Padding="10" Margin="0,15,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding FeeExplanation}" Foreground="#a0a0a0" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="Montant : " Foreground="White" FontSize="14"/>
+                                                <TextBlock Text="{Binding CalculatedFee, StringFormat={}{0}€}" Foreground="#00ff88" FontSize="18" FontWeight="Bold"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Text="Notes" Foreground="#a0a0a0" FontSize="13" Margin="0,15,0,5"/>
+                            <TextBox Text="{Binding EditNotes}" Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2"
+                                    Padding="10" Height="80" TextWrapping="Wrap" AcceptsReturn="True" FontSize="13" VerticalScrollBarVisibility="Auto"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="2" Margin="0,20,0,0">
+                        <Button Content="💾 Enregistrer" Command="{Binding SavePlayerCommand}"
+                               Height="48" Background="#00ff88" Foreground="#1a1a2e"
+                               FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <Button Content="❌ Annuler" Command="{Binding CancelEditCommand}"
+                               Height="42" Background="#e94560" Foreground="White" FontSize="15"/>
                     </StackPanel>
-                </ScrollViewer>
+                </Grid>
+            </Border>
 
-                <!-- BOUTONS ACTION -->
-                <StackPanel Grid.Row="2" Margin="0,20,0,0">
-                    <Button Content="💾 Enregistrer" 
-                           Command="{Binding SavePlayerCommand}"
-                           Height="50"
-                           Background="#00ff88" 
-                           Foreground="#1a1a2e"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Margin="0,0,0,10"/>
-
-                    <Button Content="❌ Annuler" 
-                           Command="{Binding CancelEditCommand}"
-                           Height="45"
-                           Background="#e94560" 
-                           Foreground="White"
-                           FontSize="16"/>
+            <!-- MESSAGE PAR DÉFAUT -->
+            <Border Background="#16213e" CornerRadius="15" Padding="20" Margin="10" BorderBrush="#0f3460" BorderThickness="2"
+                   Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="👤" FontSize="80" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                    <TextBlock Text="Sélectionnez un membre" FontSize="18" Foreground="#a0a0a0" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Text="pour voir ses détails" FontSize="14" Foreground="#666" HorizontalAlignment="Center"/>
                 </StackPanel>
-            </Grid>
+            </Border>
+        </Grid>
+
+        <!-- DIALOG PAIEMENT -->
+        <Border Grid.ColumnSpan="2" Background="#CC000000" Visibility="{Binding ShowPaymentDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Width="450" Height="300" Background="#16213e" CornerRadius="15" Padding="30" BorderBrush="#00ff88" BorderThickness="3">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="💰 Encaisser un paiement" FontSize="22" FontWeight="Bold" Foreground="White" Margin="0,0,0,25"/>
+
+                    <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                        <TextBlock Text="Montant à encaisser (€)" Foreground="#a0a0a0" FontSize="14" Margin="0,0,0,10"/>
+                        <TextBox Text="{Binding PaymentAmount}" Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2"
+                                Padding="15" Height="50" FontSize="20" FontWeight="Bold" HorizontalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,0,0">
+                        <Button Content="✅ Valider" Command="{Binding ProcessPaymentCommand}"
+                               Width="150" Height="50" Background="#00ff88" Foreground="#1a1a2e"
+                               FontSize="16" FontWeight="Bold" Margin="5"/>
+                        <Button Content="❌ Annuler" Command="{Binding CancelPaymentCommand}"
+                               Width="150" Height="50" Background="#e94560" Foreground="White"
+                               FontSize="16" Margin="5"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Border>
 
-        <!-- MESSAGE SI PAS D'ÉDITION -->
-        <Border Grid.Column="1" Style="{StaticResource CardStyle}"
-               Visibility="{Binding IsEditing, Converter={StaticResource BoolToCollapsedConverter}}">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="👤" FontSize="80" HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                <TextBlock Text="Sélectionnez un joueur" 
-                          FontSize="18" 
-                          Foreground="#a0a0a0"
-                          HorizontalAlignment="Center"
-                          Margin="0,0,0,10"/>
-                <TextBlock Text="ou créez-en un nouveau" 
-                          FontSize="14" 
-                          Foreground="#666"
-                          HorizontalAlignment="Center"/>
-            </StackPanel>
+        <!-- DIALOG HISTORIQUE -->
+        <Border Grid.ColumnSpan="2" Background="#CC000000" Visibility="{Binding ShowHistory, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Width="700" Height="500" Background="#16213e" CornerRadius="15" Padding="25" BorderBrush="#00ff88" BorderThickness="3">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="📜 Historique des actions" FontSize="22" FontWeight="Bold" Foreground="White" Margin="0,0,0,20"/>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding HistoryLogs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#0f3460" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Action}" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Timestamp, StringFormat=dd/MM/yyyy HH:mm}" Foreground="#a0a0a0" FontSize="12"/>
+                                            <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Details}" Foreground="#a0a0a0" FontSize="12" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Button Grid.Row="2" Content="Fermer" Command="{Binding CloseHistoryCommand}"
+                           Width="150" Height="45" Background="#e94560" Foreground="White"
+                           FontSize="15" Margin="0,15,0,0" HorizontalAlignment="Center"/>
+                </Grid>
+            </Border>
         </Border>
     </Grid>
 </Window>

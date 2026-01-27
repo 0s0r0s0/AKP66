@@ -1,13 +1,17 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using PokerTournamentDirector.Data;
 using PokerTournamentDirector.Models;
 using PokerTournamentDirector.Services;
+using PokerTournamentDirector.Views;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace PokerTournamentDirector.ViewModels
@@ -17,11 +21,12 @@ namespace PokerTournamentDirector.ViewModels
         private readonly TournamentService _tournamentService;
         private readonly SettingsService _settingsService;
         private readonly AudioService _audioService;
+        private readonly TournamentLogService _logService;
+        private readonly PokerDbContext _context;
         private readonly DispatcherTimer _timer;
         private Tournament? _tournament;
         private AppSettings? _settings;
 
-        
         // Pour la gestion correcte de la pause
         private DateTime _levelStartTime;
         private TimeSpan _elapsedBeforePause = TimeSpan.Zero;
@@ -39,7 +44,13 @@ namespace PokerTournamentDirector.ViewModels
         private string _tournamentName = string.Empty;
 
         [ObservableProperty]
+        private string _currentLevelName = string.Empty;
+
+        [ObservableProperty]
         private int _currentLevel = 1;
+
+        [ObservableProperty]
+        private int _totalLevels = 1;
 
         [ObservableProperty]
         private int _smallBlind = 25;
@@ -98,6 +109,18 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty]
         private bool _isTournamentFinished = false;
 
+        // Cet événement sera déclenché quand le tournoi finit -> célébration
+        public event EventHandler? OnVictoryCelebrationNeeded;
+
+        // Déclenche automatiquement la célébration quand le tournoi se termine
+        partial void OnIsTournamentFinishedChanged(bool oldValue, bool newValue)
+        {
+            if (newValue && !oldValue)
+            {
+                OnVictoryCelebrationNeeded?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
         [ObservableProperty]
         private string _winnerName = string.Empty;
 
@@ -121,11 +144,28 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty]
         private bool _canAddLatePlayers = true;
 
-        public TournamentTimerViewModel(TournamentService tournamentService, SettingsService settingsService, AudioService audioService)
+        // NOUVEAU: Championnat et recaves
+        [ObservableProperty]
+        private bool _isChampionshipMatch;
+
+        [ObservableProperty]
+        private bool _canRebuy;
+
+        [ObservableProperty]
+        private bool _isLastRebuyLevel;
+
+        public TournamentTimerViewModel(
+            TournamentService tournamentService,
+            SettingsService settingsService,
+            AudioService audioService,
+            TournamentLogService logService,
+            PokerDbContext context)
         {
             _tournamentService = tournamentService;
             _settingsService = settingsService;
             _audioService = audioService;
+            _logService = logService;
+            _context = context;
 
             _timer = new DispatcherTimer
             {
@@ -150,7 +190,16 @@ namespace PokerTournamentDirector.ViewModels
                 BlindLevels = new ObservableCollection<BlindLevel>(
                     _tournament.BlindStructure.Levels.OrderBy(l => l.LevelNumber)
                 );
+                TotalLevels = BlindLevels.Count;
             }
+
+            // NOUVEAU: Vérifier si championnat
+            var championshipMatch = await _context.ChampionshipMatches
+                .FirstOrDefaultAsync(m => m.TournamentId == tournamentId);
+            IsChampionshipMatch = championshipMatch != null;
+
+            // NOUVEAU: Log ouverture
+            await LogActionAsync("Ouverture écran timer");
 
             // Essayer de restaurer l'état sauvegardé
             if (await TryRestoreStateAsync())
@@ -163,7 +212,7 @@ namespace PokerTournamentDirector.ViewModels
         }
 
         [RelayCommand]
-        private void StartTournament()
+        private async Task StartTournamentAsync()
         {
             if (_tournament == null) return;
 
@@ -184,12 +233,15 @@ namespace PokerTournamentDirector.ViewModels
                 _audioService.PlaySound(AudioService.SOUND_START);
             }
 
+            // NOUVEAU: Log démarrage
+            await LogActionAsync("Tournoi démarré", $"Niveau {CurrentLevel}, {_tournament.Players.Count} joueurs");
+
             _timer.Start();
             SaveStateAsync();
         }
 
         [RelayCommand]
-        private void PauseTournament()
+        private async Task PauseTournamentAsync()
         {
             if (!IsRunning || IsPaused) return;
 
@@ -210,11 +262,14 @@ namespace PokerTournamentDirector.ViewModels
                 _audioService.PlaySound(AudioService.SOUND_PAUSE);
             }
 
+            // NOUVEAU: Log pause
+            await LogActionAsync("Pause", $"Niveau {CurrentLevel}, temps restant: {TimeRemaining}");
+
             SaveStateAsync();
         }
 
         [RelayCommand]
-        private void ResumeTournament()
+        private async Task ResumeTournamentAsync()
         {
             if (!IsPaused) return;
 
@@ -233,6 +288,9 @@ namespace PokerTournamentDirector.ViewModels
                 _audioService.PlaySound(AudioService.SOUND_PAUSE);
             }
 
+            // NOUVEAU: Log reprise
+            await LogActionAsync("Reprise", $"Niveau {CurrentLevel}");
+
             _timer.Start();
             SaveStateAsync();
         }
@@ -242,9 +300,13 @@ namespace PokerTournamentDirector.ViewModels
         {
             if (_tournament == null || BlindLevels.Count == 0) return;
 
-            // Vérifier si le niveau actuel est une pause - si oui, on ne "perd" pas le niveau
-            var currentBlindLevel = BlindLevels.FirstOrDefault(l => l.LevelNumber == CurrentLevel);
-            
+            var result = CustomMessageBox.ShowQuestion(
+     $"Passer au niveau suivant ({CurrentLevel + 1}) ?\n\nCette action ne peut pas être annulée.",
+     "Confirmer");
+
+            if (result != MessageBoxResult.Yes)
+                return;
+
             CurrentLevel++;
 
             if (CurrentLevel > BlindLevels.Count)
@@ -259,13 +321,31 @@ namespace PokerTournamentDirector.ViewModels
 
             await UpdateCurrentLevelAsync();
             await _tournamentService.UpdateTournamentAsync(_tournament);
-            SaveStateAsync();
+
+            // NOUVEAU: Log changement niveau
+            await LogActionAsync("Niveau suivant (manuel)", $"Passage au niveau {CurrentLevel}");
+
+            // NOUVEAU: Son break si c'est une pause
+            if (IsBreakLevel())
+            {
+                PlayBreakSound();
+            }
+            else _audioService.PlaySound(AudioService.SOUND_LEVEL);
+
+                SaveStateAsync();
         }
 
         [RelayCommand]
         private async Task PreviousLevelAsync()
         {
             if (_tournament == null || CurrentLevel <= 1) return;
+
+            var result = CustomMessageBox.ShowQuestion(
+    $"Revenir au niveau précédent ({CurrentLevel - 1}) ?\n\nCette action ne peut pas être annulée.",
+    "Confirmer");
+
+            if (result != MessageBoxResult.Yes)
+                return;
 
             CurrentLevel--;
             _tournament.CurrentLevel = CurrentLevel;
@@ -274,10 +354,19 @@ namespace PokerTournamentDirector.ViewModels
 
             await UpdateCurrentLevelAsync();
             await _tournamentService.UpdateTournamentAsync(_tournament);
+
+            // NOUVEAU: Log changement niveau
+            await LogActionAsync("Niveau précédent (manuel)", $"Retour au niveau {CurrentLevel}");
+            if (IsBreakLevel())
+            {
+                PlayBreakSound();
+            }
+            else _audioService.PlaySound(AudioService.SOUND_LEVEL);
+
             SaveStateAsync();
         }
 
-        private void Timer_Tick(object? sender, EventArgs e)
+        private async void Timer_Tick(object? sender, EventArgs e)
         {
             if (_tournament == null || IsPaused || IsTournamentFinished) return;
 
@@ -288,7 +377,31 @@ namespace PokerTournamentDirector.ViewModels
             if (TotalSecondsRemaining <= 0)
             {
                 // Niveau terminé, passer au suivant automatiquement
-                _ = NextLevelAsync();
+                CurrentLevel++;
+
+                if (CurrentLevel > BlindLevels.Count)
+                {
+                    CurrentLevel = BlindLevels.Count;
+                    return;
+                }
+
+                _tournament.CurrentLevel = CurrentLevel;
+                _levelStartTime = DateTime.Now;
+                _elapsedBeforePause = TimeSpan.Zero;
+
+                await UpdateCurrentLevelAsync();
+                await _tournamentService.UpdateTournamentAsync(_tournament);
+
+                // NOUVEAU: Log changement automatique
+                await LogActionAsync("Changement automatique de niveau", $"Passage au niveau {CurrentLevel}");
+
+                // NOUVEAU: Son break si pause
+                if (IsBreakLevel())
+                {
+                    PlayBreakSound();
+                }
+
+                SaveStateAsync();
                 return;
             }
 
@@ -315,21 +428,21 @@ namespace PokerTournamentDirector.ViewModels
                 switch (TotalSecondsRemaining)
                 {
                     case 60:
-                        // Son 60 secondes
                         if (_settings.SoundOn60Seconds)
                             _audioService.PlaySound(AudioService.SOUND_60S);
                         break;
+                    case 10:
+                        if (_settings.SoundOn10Seconds)
+                            _audioService.PlaySound(AudioService.SOUND_10S);
+                        break;
                     case 3:
-                        // Countdown (joué à 3 secondes, dure 3s)
                         if (_settings.SoundOnCountdown)
                             _audioService.PlaySound(AudioService.SOUND_COUNTDOWN);
                         break;
                     case 0:
-                        // Changement de niveau
                         if (_settings.SoundOnLevelChange)
                             _audioService.PlaySound(AudioService.SOUND_LEVEL);
                         break;
-                    // Note: SoundOn10Seconds supprimé comme demandé
                 }
             }
         }
@@ -374,6 +487,11 @@ namespace PokerTournamentDirector.ViewModels
             IsBreak = currentBlindLevel.IsBreak;
             BreakName = currentBlindLevel.BreakName ?? string.Empty;
 
+            // Nom du niveau
+            CurrentLevelName = IsBreak
+                ? (string.IsNullOrEmpty(BreakName) ? "PAUSE" : BreakName)
+                : $"NIVEAU {CurrentLevel}";
+
             // Durée du niveau
             _levelDurationSeconds = currentBlindLevel.DurationMinutes * 60;
             ProgressBarMaximum = _levelDurationSeconds;
@@ -383,7 +501,7 @@ namespace PokerTournamentDirector.ViewModels
                 .Where(l => l.LevelNumber > CurrentLevel && !l.IsBreak)
                 .OrderBy(l => l.LevelNumber)
                 .FirstOrDefault();
-            
+
             if (nextBlindLevel != null)
             {
                 NextSmallBlind = nextBlindLevel.SmallBlind;
@@ -403,7 +521,79 @@ namespace PokerTournamentDirector.ViewModels
                 CanAddLatePlayers = CurrentLevel <= _tournament.LateRegistrationLevels;
             }
 
+            // NOUVEAU: Mise à jour statut recaves
+            UpdateRebuyStatus();
+
             await InternalRefreshStatsAsync();
+        }
+
+        // NOUVELLE MÉTHODE: Mise à jour statut recaves
+        private void UpdateRebuyStatus()
+        {
+            if (_tournament == null || !_tournament.AllowRebuys || !IsRunning)
+            {
+                CanRebuy = false;
+                IsLastRebuyLevel = false;
+                return;
+            }
+
+            var lateRegLevels = _tournament.LateRegistrationLevels;
+
+            CanRebuy = CurrentLevel <= lateRegLevels;
+            IsLastRebuyLevel = CurrentLevel == lateRegLevels && CanRebuy;
+        }
+
+        // NOUVELLE MÉTHODE: Vérifier si niveau = pause
+        private bool IsBreakLevel()
+        {
+            var level = BlindLevels.FirstOrDefault(l => l.LevelNumber == CurrentLevel);
+            return level?.IsBreak ?? false;
+        }
+
+        // NOUVELLE MÉTHODE: Jouer son break
+        private void PlayBreakSound()
+        {
+            try
+            {
+                var soundPath = Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "Sounds",
+                    "break.mp3");
+
+                if (File.Exists(soundPath))
+                {
+                    // Pour MP3, utiliser MediaPlayer
+                    var player = new System.Windows.Media.MediaPlayer();
+                    player.Open(new Uri(soundPath));
+                    player.Play();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur lecture son break: {ex.Message}");
+            }
+        }
+
+        // NOUVELLE MÉTHODE: Logger les actions
+        private async Task LogActionAsync(string action, string? details = null)
+        {
+            try
+            {
+                await _logService.AddLogAsync(new TournamentLog
+                {
+                    TournamentId = TournamentId,
+                    Action = action,
+                    Details = details,
+                    Timestamp = DateTime.Now,
+                    Level = CurrentLevel,
+                    PlayersRemaining = PlayersRemaining,
+                    Username = Environment.UserName
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Erreur log: {ex.Message}");
+            }
         }
 
         private async Task InternalRefreshStatsAsync()
@@ -456,11 +646,16 @@ namespace PokerTournamentDirector.ViewModels
                 {
                     WinnerName = winner.Player?.Name ?? "Inconnu";
                     winner.FinishPosition = 1;
-                    winner.Winnings = PrizePool; // Simplification, à ajuster selon la structure de paiement
+                    winner.Winnings = PrizePool;
                     await _tournamentService.UpdateTournamentPlayerAsync(winner);
                 }
 
                 await _tournamentService.UpdateTournamentAsync(_tournament);
+
+                // NOUVEAU: Log fin tournoi
+                await LogActionAsync("Tournoi terminé", $"Gagnant: {WinnerName}");
+                
+
                 ClearSavedState();
             }
         }
@@ -485,17 +680,12 @@ namespace PokerTournamentDirector.ViewModels
             // Cette commande sera liée à un dialogue dans la vue
         }
 
-        /// <summary>
-        /// Met à jour les blinds et ajuste le temps du niveau actuel
-        /// </summary>
         public void UpdateBlindsAndTime(int smallBlind, int bigBlind, int ante, int timeAdjustmentSeconds)
         {
-            // Mettre à jour les blinds
             SmallBlind = smallBlind;
             BigBlind = bigBlind;
             Ante = ante;
 
-            // Mettre à jour dans la collection
             var currentBlindLevel = BlindLevels.FirstOrDefault(l => l.LevelNumber == CurrentLevel);
             if (currentBlindLevel != null)
             {
@@ -504,24 +694,21 @@ namespace PokerTournamentDirector.ViewModels
                 currentBlindLevel.Ante = ante;
             }
 
-            // Ajuster le temps
             if (timeAdjustmentSeconds != 0)
             {
                 int newTime = TotalSecondsRemaining + timeAdjustmentSeconds;
                 if (newTime > 0)
                 {
-                    // Ajuster le temps écoulé
                     _elapsedBeforePause = _elapsedBeforePause - TimeSpan.FromSeconds(timeAdjustmentSeconds);
                     if (_elapsedBeforePause < TimeSpan.Zero)
                     {
                         _elapsedBeforePause = TimeSpan.Zero;
                         _levelDurationSeconds = newTime + (int)(DateTime.Now - _levelStartTime).TotalSeconds;
                     }
-                    
+
                     TotalSecondsRemaining = newTime;
                     ProgressBarMaximum = Math.Max(ProgressBarMaximum, TotalSecondsRemaining);
-                    
-                    // Mettre à jour l'affichage
+
                     int minutes = TotalSecondsRemaining / 60;
                     int seconds = TotalSecondsRemaining % 60;
                     TimeRemaining = $"{minutes:D2}:{seconds:D2}";
@@ -623,7 +810,7 @@ namespace PokerTournamentDirector.ViewModels
                 TimeRemaining = $"{minutes:D2}:{seconds:D2}";
 
                 IsRunning = state.IsRunning;
-                IsPaused = true; // Toujours restaurer en pause pour éviter de perdre du temps
+                IsPaused = true; // Toujours restaurer en pause
 
                 await InternalRefreshStatsAsync();
 
@@ -660,6 +847,10 @@ namespace PokerTournamentDirector.ViewModels
             {
                 await _tournamentService.RegisterPlayerAsync(TournamentId, playerId);
                 await InternalRefreshStatsAsync();
+
+                // NOUVEAU: Log ajout joueur
+                await LogActionAsync("Joueur retardataire ajouté", $"ID: {playerId}, Niveau {CurrentLevel}");
+
                 SaveStateAsync();
                 return true;
             }

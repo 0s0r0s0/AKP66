@@ -6,11 +6,29 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace PokerTournamentDirector.Models
 {
     // ==================== JOUEUR ====================
+
+    // ==================== ENUMS ====================
+    public enum PaymentStatus
+    {
+        Paid,           // Réglée
+        InProgress,     // En cours
+        Trial,          // Essai
+        None            // Aucun paiement
+    }
+
+    public enum PlayerStatus
+    {
+        Active,
+        Inactive
+    }
+
+    // ==================== JOUEUR ====================
     public class Player
     {
         [Key]
         public int Id { get; set; }
 
+        // Informations personnelles
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
@@ -24,15 +42,32 @@ namespace PokerTournamentDirector.Models
         [MaxLength(20)]
         public string? Phone { get; set; }
 
-        public string? PhotoPath { get; set; }
+        [MaxLength(100)]
+        public string? City { get; set; }
 
+        public string? PhotoPath { get; set; }
         public string? Notes { get; set; }
 
+        // Dates
+        public DateTime RegistrationDate { get; set; } = DateTime.Now;
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime? LastTournamentDate { get; set; }
+        public DateTime? TrialEnd { get; set; }
 
-        public bool IsActive { get; set; } = true;
+        // Statut
+        public bool IsActive { get; set; } = true; // Conservé pour compatibilité
+        public PlayerStatus Status { get; set; } = PlayerStatus.Active;
 
-        // Statistiques
+        // Cotisation
+        public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.None;
+
+        public decimal TotalDue { get; set; } = 0; // Montant total à payer
+        public decimal Paid { get; set; } = 0; // Montant déjà payé
+
+        public int? InstallmentCount { get; set; } // Nombre de mensualités (null si paiement unique)
+        public DateTime? NextDueDate { get; set; } // Prochaine échéance
+
+        // Statistiques (conservées pour historique)
         public int TotalTournamentsPlayed { get; set; } = 0;
         public int TotalWins { get; set; } = 0;
         public int TotalITM { get; set; } = 0;
@@ -41,6 +76,37 @@ namespace PokerTournamentDirector.Models
         // Relations
         public virtual ICollection<TournamentPlayer> TournamentParticipations { get; set; } = new List<TournamentPlayer>();
         public virtual ICollection<PlayerRebuy> Rebuys { get; set; } = new List<PlayerRebuy>();
+        public virtual ICollection<PaymentSchedule> PaymentSchedules { get; set; } = new List<PaymentSchedule>();
+        public virtual ICollection<PlayerLog> Logs { get; set; } = new List<PlayerLog>();
+    }
+
+    // ==================== ÉCHÉANCIER DE PAIEMENT ====================
+    public class PaymentSchedule
+    {
+        [Key]
+        public int Id { get; set; }
+
+        public int PlayerId { get; set; }
+        public virtual Player Player { get; set; } = null!;
+
+        public DateTime DueDate { get; set; }
+        public decimal Amount { get; set; }
+        public bool IsPaid { get; set; } = false;
+        public DateTime? PaidDate { get; set; }
+    }
+
+    // ==================== LOGS DES ACTIONS ====================
+    public class PlayerLog
+    {
+        [Key]
+        public int Id { get; set; }
+
+        public int PlayerId { get; set; }
+        public virtual Player Player { get; set; } = null!;
+
+        public DateTime Timestamp { get; set; } = DateTime.Now;
+        public string Action { get; set; } = string.Empty; // "Création", "Paiement", "Modification", etc.
+        public string? Details { get; set; }
     }
 
     // ==================== RECAVE JOUEUR ====================
@@ -187,6 +253,9 @@ namespace PokerTournamentDirector.Models
         public virtual ICollection<TournamentPlayer> Players { get; set; } = new List<TournamentPlayer>();
         public virtual ICollection<PokerTable> Tables { get; set; } = new List<PokerTable>();
         public virtual ICollection<PlayerRebuy> Rebuys { get; set; } = new List<PlayerRebuy>();
+
+        public virtual ICollection<ChampionshipMatch> ChampionshipMatches { get; set; } = new List<ChampionshipMatch>();
+
     }
 
     // ==================== JOUEUR DANS UN TOURNOI ====================
@@ -221,6 +290,9 @@ namespace PokerTournamentDirector.Models
         public int? FinishPosition { get; set; }
         public DateTime? EliminationTime { get; set; }
         public int? EliminatedByPlayerId { get; set; }
+
+        public int? EliminatedById { get; set; } 
+        public DateTime? EliminatedAt { get; set; }
 
         public decimal? Winnings { get; set; }
 

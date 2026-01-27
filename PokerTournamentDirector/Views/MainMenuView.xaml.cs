@@ -1,14 +1,16 @@
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using PokerTournamentDirector.Services;
 using PokerTournamentDirector.ViewModels;
-using System.Windows;
 using System.Linq;
+using System.Windows;
 
 namespace PokerTournamentDirector.Views
 {
     public partial class MainMenuView : Window
     {
         private readonly IServiceProvider _serviceProvider;
+        private AudioService audioService;
 
         public MainMenuView(IServiceProvider serviceProvider)
         {
@@ -51,14 +53,16 @@ namespace PokerTournamentDirector.Views
             // Ouvrir l'écran de configuration du tournoi
             var tournamentService = _serviceProvider.GetRequiredService<TournamentService>();
             var templateService = _serviceProvider.GetRequiredService<TournamentTemplateService>();
-            var tableManagementService = _serviceProvider.GetRequiredService<TableManagementService>(); // ← AJOUTÉ
+            var tableManagementService = _serviceProvider.GetRequiredService<TableManagementService>(); 
+            var championshipService = _serviceProvider.GetRequiredService<ChampionshipService>();
 
             var viewModel = new TournamentSetupViewModel(
                 tournamentService,
                 templateService,
                 playerService,
                 blindService,
-                tableManagementService); // ← AJOUTÉ
+                tableManagementService,
+                championshipService); 
 
             var setupWindow = new TournamentSetupView(viewModel, _serviceProvider);
 
@@ -68,6 +72,7 @@ namespace PokerTournamentDirector.Views
                 await LaunchTournamentTimerAsync(setupWindow.CreatedTournamentId.Value);
             }
         }
+
 
         private async void ResumeTournament_Click(object sender, RoutedEventArgs e)
         {
@@ -88,19 +93,10 @@ namespace PokerTournamentDirector.Views
                 return;
             }
 
-            // Si un seul tournoi, le lancer directement
-            if (activeTournaments.Count == 1)
-            {
+
                 await LaunchTournamentTimerAsync(activeTournaments.First().Id);
                 return;
-            }
 
-            // Sinon, afficher une liste de sélection
-            var selectWindow = new TournamentSelectDialog(activeTournaments);
-            if (selectWindow.ShowDialog() == true && selectWindow.SelectedTournamentId.HasValue)
-            {
-                await LaunchTournamentTimerAsync(selectWindow.SelectedTournamentId.Value);
-            }
         }
 
         private async Task LaunchTournamentTimerAsync(int tournamentId)
@@ -114,17 +110,29 @@ namespace PokerTournamentDirector.Views
 
         private void ManagePlayers_Click(object sender, RoutedEventArgs e)
         {
+            var settingsService = _serviceProvider.GetRequiredService<SettingsService>(); 
             var playerService = _serviceProvider.GetRequiredService<PlayerService>();
-            var viewModel = new PlayerManagementViewModel(playerService);
+            var viewModel = new PlayerManagementViewModel(playerService, settingsService);
 
             var playerWindow = new PlayerManagementView(viewModel);
             playerWindow.ShowDialog();
         }
 
+        private void Championship_Click(object sender, RoutedEventArgs e)
+        {
+            var championshipService = _serviceProvider.GetRequiredService<ChampionshipService>();
+            var viewModel = new ChampionshipManagementViewModel(championshipService);
+
+            var window = new ChampionshipManagementView(viewModel);
+            window.Show();
+        }
+
+
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
             var settingsService = _serviceProvider.GetRequiredService<SettingsService>();
-            var viewModel = new SettingsViewModel(settingsService);
+            var audioService = _serviceProvider.GetRequiredService<AudioService>();
+            var viewModel = new SettingsViewModel(settingsService, audioService);
 
             var settingsWindow = new SettingsView(viewModel);
             settingsWindow.ShowDialog();
@@ -160,116 +168,119 @@ namespace PokerTournamentDirector.Views
                 Application.Current.Shutdown();
             }
         }
-    }
 
+
+    }
+    
+    /// ZDIS
     /// <summary>
     /// Dialogue simple pour sélectionner un tournoi à reprendre
     /// </summary>
-    public class TournamentSelectDialog : Window
-    {
-        public int? SelectedTournamentId { get; private set; }
-        private System.Windows.Controls.ListBox _listBox;
+    //public class TournamentSelectDialog : Window
+    //{
+    //    public int? SelectedTournamentId { get; private set; }
+    //    private System.Windows.Controls.ListBox _listBox;
 
-        public TournamentSelectDialog(System.Collections.Generic.List<Models.Tournament> tournaments)
-        {
-            Title = "Sélectionner un tournoi";
-            Width = 500;
-            Height = 400;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            Background = new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1a1a2e"));
+    //    public TournamentSelectDialog(System.Collections.Generic.List<Models.Tournament> tournaments)
+    //    {
+    //        Title = "Sélectionner un tournoi";
+    //        Width = 500;
+    //        Height = 400;
+    //        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+    //        Background = new System.Windows.Media.SolidColorBrush(
+    //            (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1a1a2e"));
 
-            var mainPanel = new System.Windows.Controls.StackPanel { Margin = new Thickness(20) };
+    //        var mainPanel = new System.Windows.Controls.StackPanel { Margin = new Thickness(20) };
 
-            mainPanel.Children.Add(new System.Windows.Controls.TextBlock
-            {
-                Text = "Choisissez un tournoi à reprendre",
-                FontSize = 20,
-                FontWeight = FontWeights.Bold,
-                Foreground = System.Windows.Media.Brushes.White,
-                Margin = new Thickness(0, 0, 0, 20)
-            });
+    //        mainPanel.Children.Add(new System.Windows.Controls.TextBlock
+    //        {
+    //            Text = "Choisissez un tournoi à reprendre",
+    //            FontSize = 20,
+    //            FontWeight = FontWeights.Bold,
+    //            Foreground = System.Windows.Media.Brushes.White,
+    //            Margin = new Thickness(0, 0, 0, 20)
+    //        });
 
-            _listBox = new System.Windows.Controls.ListBox
-            {
-                Height = 250,
-                Background = new System.Windows.Media.SolidColorBrush(
-                    (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#0f3460")),
-                Foreground = System.Windows.Media.Brushes.White,
-                BorderThickness = new Thickness(0)
-            };
+    //        _listBox = new System.Windows.Controls.ListBox
+    //        {
+    //            Height = 250,
+    //            Background = new System.Windows.Media.SolidColorBrush(
+    //                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#0f3460")),
+    //            Foreground = System.Windows.Media.Brushes.White,
+    //            BorderThickness = new Thickness(0)
+    //        };
 
-            foreach (var tournament in tournaments)
-            {
-                var statusText = tournament.Status switch
-                {
-                    Models.TournamentStatus.Running => "▶️ En cours",
-                    Models.TournamentStatus.Paused => "⏸️ En pause",
-                    Models.TournamentStatus.Registration => "📝 Inscriptions",
-                    _ => tournament.Status.ToString()
-                };
+    //        foreach (var tournament in tournaments)
+    //        {
+    //            var statusText = tournament.Status switch
+    //            {
+    //                Models.TournamentStatus.Running => "▶️ En cours",
+    //                Models.TournamentStatus.Paused => "⏸️ En pause",
+    //                Models.TournamentStatus.Registration => "📝 Inscriptions",
+    //                _ => tournament.Status.ToString()
+    //            };
 
-                _listBox.Items.Add(new System.Windows.Controls.ListBoxItem
-                {
-                    Content = $"{tournament.Name} - {tournament.Date:dd/MM/yyyy} ({statusText})",
-                    Tag = tournament.Id,
-                    Padding = new Thickness(10, 8, 10, 8),
-                    Foreground = System.Windows.Media.Brushes.White
-                });
-            }
+    //            _listBox.Items.Add(new System.Windows.Controls.ListBoxItem
+    //            {
+    //                Content = $"{tournament.Name} - {tournament.Date:dd/MM/yyyy} ({statusText})",
+    //                Tag = tournament.Id,
+    //                Padding = new Thickness(10, 8, 10, 8),
+    //                Foreground = System.Windows.Media.Brushes.White
+    //            });
+    //        }
 
-            mainPanel.Children.Add(_listBox);
+    //        mainPanel.Children.Add(_listBox);
 
-            var buttonPanel = new System.Windows.Controls.StackPanel
-            {
-                Orientation = System.Windows.Controls.Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 20, 0, 0)
-            };
+    //        var buttonPanel = new System.Windows.Controls.StackPanel
+    //        {
+    //            Orientation = System.Windows.Controls.Orientation.Horizontal,
+    //            HorizontalAlignment = HorizontalAlignment.Center,
+    //            Margin = new Thickness(0, 20, 0, 0)
+    //        };
 
-            var btnSelect = new System.Windows.Controls.Button
-            {
-                Content = "Reprendre",
-                Width = 120,
-                Height = 40,
-                Background = new System.Windows.Media.SolidColorBrush(
-                    (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#00ff88")),
-                Foreground = new System.Windows.Media.SolidColorBrush(
-                    (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1a1a2e")),
-                FontWeight = FontWeights.Bold,
-                Margin = new Thickness(5, 0, 5, 0)
-            };
-            btnSelect.Click += (s, e) =>
-            {
-                if (_listBox.SelectedItem is System.Windows.Controls.ListBoxItem item && item.Tag is int id)
-                {
-                    SelectedTournamentId = id;
-                    DialogResult = true;
-                    Close();
-                }
-                else
-                {
-                    CustomMessageBox.ShowInformation("Veuillez sélectionner un tournoi.", "Info");
-                }
-            };
-            buttonPanel.Children.Add(btnSelect);
+    //        var btnSelect = new System.Windows.Controls.Button
+    //        {
+    //            Content = "Reprendre",
+    //            Width = 120,
+    //            Height = 40,
+    //            Background = new System.Windows.Media.SolidColorBrush(
+    //                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#00ff88")),
+    //            Foreground = new System.Windows.Media.SolidColorBrush(
+    //                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1a1a2e")),
+    //            FontWeight = FontWeights.Bold,
+    //            Margin = new Thickness(5, 0, 5, 0)
+    //        };
+    //        btnSelect.Click += (s, e) =>
+    //        {
+    //            if (_listBox.SelectedItem is System.Windows.Controls.ListBoxItem item && item.Tag is int id)
+    //            {
+    //                SelectedTournamentId = id;
+    //                DialogResult = true;
+    //                Close();
+    //            }
+    //            else
+    //            {
+    //                CustomMessageBox.ShowInformation("Veuillez sélectionner un tournoi.", "Info");
+    //            }
+    //        };
+    //        buttonPanel.Children.Add(btnSelect);
 
-            var btnCancel = new System.Windows.Controls.Button
-            {
-                Content = "Annuler",
-                Width = 120,
-                Height = 40,
-                Background = new System.Windows.Media.SolidColorBrush(
-                    (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#e94560")),
-                Foreground = System.Windows.Media.Brushes.White,
-                FontWeight = FontWeights.Bold,
-                Margin = new Thickness(5, 0, 5, 0)
-            };
-            btnCancel.Click += (s, e) => { DialogResult = false; Close(); };
-            buttonPanel.Children.Add(btnCancel);
+    //        var btnCancel = new System.Windows.Controls.Button
+    //        {
+    //            Content = "Annuler",
+    //            Width = 120,
+    //            Height = 40,
+    //            Background = new System.Windows.Media.SolidColorBrush(
+    //                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#e94560")),
+    //            Foreground = System.Windows.Media.Brushes.White,
+    //            FontWeight = FontWeights.Bold,
+    //            Margin = new Thickness(5, 0, 5, 0)
+    //        };
+    //        btnCancel.Click += (s, e) => { DialogResult = false; Close(); };
+    //        buttonPanel.Children.Add(btnCancel);
 
-            mainPanel.Children.Add(buttonPanel);
-            Content = mainPanel;
-        }
-    }
+    //        mainPanel.Children.Add(buttonPanel);
+    //        Content = mainPanel;
+    //    }
+    //}
 }

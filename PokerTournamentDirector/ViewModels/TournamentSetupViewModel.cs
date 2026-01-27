@@ -8,12 +8,32 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Diagnostics;
 
 namespace PokerTournamentDirector.ViewModels
 {
+    // Classe wrapper pour ajouter IsSelected aux joueurs
+    public partial class SelectablePlayer : ObservableObject
+    {
+        public Player Player { get; set; }
+
+        [ObservableProperty]
+        private bool isSelected;
+
+        public int Id => Player.Id;
+        public string Name => Player.Name;
+        public string Nickname => Player.Nickname;
+
+        public SelectablePlayer(Player player)
+        {
+            Player = player;
+        }
+    }
+
     public partial class TournamentSetupViewModel : ObservableObject
     {
         private readonly TournamentService _tournamentService;
+        private readonly ChampionshipService _championshipService;
         private readonly TournamentTemplateService _templateService;
         private readonly PlayerService _playerService;
         private readonly BlindStructureService _blindService;
@@ -25,7 +45,7 @@ namespace PokerTournamentDirector.ViewModels
 
         // Étape actuelle - 4 étapes
         [ObservableProperty]
-        private int _currentStep = 1; // 1=Config, 2=Joueurs, 3=Tables, 4=Prêt
+        private int _currentStep = 1;
 
         [ObservableProperty]
         private string _stepTitle = "Configuration du tournoi";
@@ -73,21 +93,37 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty]
         private int _maxRebuysPerPlayer = 3;
 
-        // === ÉTAPE 2 : Inscription joueurs ===
         [ObservableProperty]
-        private ObservableCollection<Player> _availablePlayers = new();
+        private int _rebuyUntilPlayersLeft = 1;
 
         [ObservableProperty]
-        private ObservableCollection<Player> _registeredPlayers = new();
+        private int _rebuyMaxLevel = 0;
+
+        // === ÉTAPE 2 : Inscription joueurs avec sélection multiple ===
+        [ObservableProperty]
+        private ObservableCollection<SelectablePlayer> _availablePlayers = new();
 
         [ObservableProperty]
-        private Player? _selectedAvailablePlayer;
-
-        [ObservableProperty]
-        private Player? _selectedRegisteredPlayer;
+        private ObservableCollection<SelectablePlayer> _registeredPlayers = new();
 
         [ObservableProperty]
         private string _playerSearchText = string.Empty;
+
+        // Sélection multiple
+        [ObservableProperty]
+        private bool _selectAllAvailable;
+
+        [ObservableProperty]
+        private bool _selectAllRegistered;
+
+        [ObservableProperty]
+        private int _selectedAvailableCount;
+
+        [ObservableProperty]
+        private int _selectedRegisteredCount;
+
+        public bool HasAvailableSelection => SelectedAvailableCount > 0;
+        public bool HasRegisteredSelection => SelectedRegisteredCount > 0;
 
         // === ÉTAPE 3 : Gestion des tables ===
         [ObservableProperty]
@@ -115,6 +151,22 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty]
         private bool _canStartTournament = false;
 
+        // === Manche de championnat ===
+        [ObservableProperty]
+        private bool _isChampionshipMatch = false;
+
+        [ObservableProperty]
+        private ObservableCollection<Championship> _availableChampionships = new();
+
+        [ObservableProperty]
+        private Championship? _selectedChampionship;
+
+        [ObservableProperty]
+        private bool _isFinalMatch = false;
+
+        [ObservableProperty]
+        private bool _isMainEvent = false;
+
         // Événement pour signaler que le tournoi est prêt à démarrer
         public event EventHandler<int>? TournamentReadyToStart;
 
@@ -123,22 +175,22 @@ namespace PokerTournamentDirector.ViewModels
             TournamentTemplateService templateService,
             PlayerService playerService,
             BlindStructureService blindService,
-            TableManagementService tableManagementService)
+            TableManagementService tableManagementService,
+            ChampionshipService championshipService)
         {
             _tournamentService = tournamentService;
             _templateService = templateService;
             _playerService = playerService;
             _blindService = blindService;
             _tableManagementService = tableManagementService;
+            _championshipService = championshipService;
         }
 
         public async Task InitializeAsync()
         {
-            // Charger les templates
             var templates = await _templateService.GetAllTemplatesAsync();
             AvailableTemplates = new ObservableCollection<TournamentTemplate>(templates);
 
-            // Charger les structures de blinds
             var blindStructures = await _blindService.GetAllStructuresAsync();
             AvailableBlindStructures = new ObservableCollection<BlindStructure>(blindStructures);
 
@@ -147,8 +199,8 @@ namespace PokerTournamentDirector.ViewModels
                 SelectedBlindStructure = AvailableBlindStructures.First();
             }
 
-            // Charger tous les joueurs
             await LoadPlayersAsync();
+            await LoadChampionshipsAsync();
         }
 
         private async Task LoadPlayersAsync()
@@ -158,19 +210,26 @@ namespace PokerTournamentDirector.ViewModels
             AvailablePlayers.Clear();
             foreach (var player in players.OrderBy(p => p.Name))
             {
-                // Ne pas inclure les joueurs déjà inscrits
                 if (!RegisteredPlayers.Any(rp => rp.Id == player.Id))
                 {
-                    AvailablePlayers.Add(player);
+                    var selectablePlayer = new SelectablePlayer(player);
+                    selectablePlayer.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(SelectablePlayer.IsSelected))
+                        {
+                            UpdateSelectionCounts();
+                        }
+                    };
+                    AvailablePlayers.Add(selectablePlayer);
                 }
             }
+            UpdateSelectionCounts();
         }
 
         partial void OnSelectedTemplateChanged(TournamentTemplate? value)
         {
             if (value != null)
             {
-                // Appliquer les valeurs du template
                 TournamentName = $"{value.Name} - {DateTime.Now:dd/MM/yyyy}";
                 BuyIn = value.BuyIn;
                 StartingStack = value.StartingStack;
@@ -180,8 +239,9 @@ namespace PokerTournamentDirector.ViewModels
                 AllowRebuys = value.AllowRebuys;
                 RebuyAmount = value.RebuyAmount ?? value.BuyIn;
                 MaxRebuysPerPlayer = value.MaxRebuysPerPlayer;
+                RebuyMaxLevel = value.RebuyMaxLevel ?? 0;
 
-                // Sélectionner la structure de blinds du template
+
                 SelectedBlindStructure = AvailableBlindStructures
                     .FirstOrDefault(bs => bs.Id == value.BlindStructureId);
             }
@@ -203,17 +263,254 @@ namespace PokerTournamentDirector.ViewModels
             {
                 if (!RegisteredPlayers.Any(rp => rp.Id == player.Id))
                 {
-                    AvailablePlayers.Add(player);
+                    var selectablePlayer = new SelectablePlayer(player);
+                    selectablePlayer.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(SelectablePlayer.IsSelected))
+                        {
+                            UpdateSelectionCounts();
+                        }
+                    };
+                    AvailablePlayers.Add(selectablePlayer);
                 }
             }
+            UpdateSelectionCounts();
         }
+
+        // === MÉTHODES SÉLECTION MULTIPLE ===
+
+        partial void OnSelectAllAvailableChanged(bool value)
+        {
+            foreach (var player in AvailablePlayers)
+            {
+                player.IsSelected = value;
+            }
+            UpdateSelectionCounts();
+        }
+
+        partial void OnSelectAllRegisteredChanged(bool value)
+        {
+            foreach (var player in RegisteredPlayers)
+            {
+                player.IsSelected = value;
+            }
+            UpdateSelectionCounts();
+        }
+
+        private void UpdateSelectionCounts()
+        {
+            SelectedAvailableCount = AvailablePlayers.Count(p => p.IsSelected);
+            SelectedRegisteredCount = RegisteredPlayers.Count(p => p.IsSelected);
+
+            OnPropertyChanged(nameof(HasAvailableSelection));
+            OnPropertyChanged(nameof(HasRegisteredSelection));
+        }
+
+        [RelayCommand]
+        private void ClearAvailableSelection()
+        {
+            SelectAllAvailable = false;
+            foreach (var player in AvailablePlayers)
+            {
+                player.IsSelected = false;
+            }
+            UpdateSelectionCounts();
+        }
+
+        [RelayCommand]
+        private void ClearRegisteredSelection()
+        {
+            SelectAllRegistered = false;
+            foreach (var player in RegisteredPlayers)
+            {
+                player.IsSelected = false;
+            }
+            UpdateSelectionCounts();
+        }
+
+        [RelayCommand]
+        private async Task RegisterSelectedPlayersAsync()
+        {
+            if (_tournament == null) return;
+
+            var playersToRegister = AvailablePlayers.Where(p => p.IsSelected).ToList();
+            if (!playersToRegister.Any()) return;
+
+            int successCount = 0;
+            int errorCount = 0;
+
+            foreach (var selectablePlayer in playersToRegister)
+            {
+                try
+                {
+                    await _tournamentService.RegisterPlayerAsync(_tournament.Id, selectablePlayer.Id);
+
+                    // Réabonner au PropertyChanged pour la nouvelle liste
+                    selectablePlayer.IsSelected = false;
+                    selectablePlayer.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(SelectablePlayer.IsSelected))
+                        {
+                            UpdateSelectionCounts();
+                        }
+                    };
+
+                    RegisteredPlayers.Add(selectablePlayer);
+                    successCount++;
+                }
+                catch (Exception ex)
+                {
+                    errorCount++;
+                    Debug.WriteLine($"Erreur inscription {selectablePlayer.Name}: {ex.Message}");
+                }
+            }
+
+            // Retirer les joueurs inscrits avec succès
+            foreach (var player in playersToRegister)
+            {
+                AvailablePlayers.Remove(player);
+            }
+
+            UpdateSelectionCounts();
+            TotalPlayers = RegisteredPlayers.Count;
+            UpdatePrizePool();
+
+            // Message de confirmation
+            if (errorCount > 0)
+            {
+                CustomMessageBox.ShowWarning(
+                    $"{successCount} joueur(s) inscrit(s)\n{errorCount} erreur(s)",
+                    "Inscription partielle");
+            }
+            else if (successCount > 0)
+            {
+                CustomMessageBox.ShowSuccess(
+                    $"✅ {successCount} joueur(s) inscrit(s) avec succès!",
+                    "Succès");
+            }
+        }
+
+        [RelayCommand]
+        private async Task UnregisterSelectedPlayersAsync()
+        {
+            if (_tournament == null) return;
+
+            var playersToUnregister = RegisteredPlayers.Where(p => p.IsSelected).ToList();
+            if (!playersToUnregister.Any()) return;
+
+            int successCount = 0;
+            int errorCount = 0;
+
+            foreach (var selectablePlayer in playersToUnregister)
+            {
+                try
+                {
+                    await _tournamentService.UnregisterPlayerAsync(_tournament.Id, selectablePlayer.Id);
+
+                    // Réabonner au PropertyChanged pour la nouvelle liste
+                    selectablePlayer.IsSelected = false;
+                    selectablePlayer.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(SelectablePlayer.IsSelected))
+                        {
+                            UpdateSelectionCounts();
+                        }
+                    };
+
+                    AvailablePlayers.Add(selectablePlayer);
+                    successCount++;
+                }
+                catch (Exception ex)
+                {
+                    errorCount++;
+                    Debug.WriteLine($"Erreur désinscription {selectablePlayer.Name}: {ex.Message}");
+                }
+            }
+
+            // Retirer les joueurs désinscrits avec succès
+            foreach (var player in playersToUnregister)
+            {
+                RegisteredPlayers.Remove(player);
+            }
+
+            // Re-trier la liste des disponibles
+            var sorted = AvailablePlayers.OrderBy(p => p.Name).ToList();
+            AvailablePlayers.Clear();
+            foreach (var p in sorted)
+            {
+                p.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(SelectablePlayer.IsSelected))
+                    {
+                        UpdateSelectionCounts();
+                    }
+                };
+                AvailablePlayers.Add(p);
+            }
+
+            UpdateSelectionCounts();
+            TotalPlayers = RegisteredPlayers.Count;
+            UpdatePrizePool();
+
+            if (errorCount > 0)
+            {
+                CustomMessageBox.ShowWarning(
+                    $"{successCount} joueur(s) désinscrit(s)\n{errorCount} erreur(s)",
+                    "Désinscription partielle");
+            }
+            else if (successCount > 0)
+            {
+                CustomMessageBox.ShowSuccess(
+                    $"✅ {successCount} joueur(s) désinscrit(s) avec succès!",
+                    "Succès");
+            }
+        }
+
+        [RelayCommand]
+        private async Task RegisterAllPlayersAsync()
+        {
+            if (_tournament == null) return;
+
+            var playersToRegister = AvailablePlayers.ToList();
+            int successCount = 0;
+
+            foreach (var selectablePlayer in playersToRegister)
+            {
+                try
+                {
+                    await _tournamentService.RegisterPlayerAsync(_tournament.Id, selectablePlayer.Id);
+
+                    selectablePlayer.IsSelected = false;
+                    selectablePlayer.PropertyChanged += (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(SelectablePlayer.IsSelected))
+                        {
+                            UpdateSelectionCounts();
+                        }
+                    };
+
+                    RegisteredPlayers.Add(selectablePlayer);
+                    successCount++;
+                }
+                catch { /* Ignorer les erreurs individuelles */ }
+            }
+
+            AvailablePlayers.Clear();
+            TotalPlayers = RegisteredPlayers.Count;
+            UpdatePrizePool();
+
+            CustomMessageBox.ShowSuccess(
+                $"✅ {successCount} joueur(s) inscrit(s)!",
+                "Inscription complète");
+        }
+
+        // === NAVIGATION ÉTAPES ===
 
         [RelayCommand]
         private async Task NextStepAsync()
         {
             if (CurrentStep == 1)
             {
-                // Valider la configuration et créer le tournoi
                 if (!await ValidateAndCreateTournamentAsync())
                     return;
 
@@ -230,19 +527,17 @@ namespace PokerTournamentDirector.ViewModels
                     return;
                 }
 
-                // Passer à l'étape de gestion des tables
                 CurrentStep = 3;
                 StepTitle = "Gestion des tables";
                 await CreateTablesAsync();
             }
             else if (CurrentStep == 3)
             {
-                // Valider que tous les joueurs sont placés
                 if (!await ValidateTableAssignmentsAsync())
                 {
                     CustomMessageBox.ShowWarning(
-                    "Tous les joueurs doivent être placés à une table avant de continuer.",
-                    "Attention");
+                        "Tous les joueurs doivent être placés à une table avant de continuer.",
+                        "Attention");
                     return;
                 }
 
@@ -270,7 +565,6 @@ namespace PokerTournamentDirector.ViewModels
 
         private async Task<bool> ValidateAndCreateTournamentAsync()
         {
-            // Validation
             if (string.IsNullOrWhiteSpace(TournamentName))
             {
                 CustomMessageBox.ShowWarning("Veuillez entrer un nom pour le tournoi.", "Erreur");
@@ -283,7 +577,14 @@ namespace PokerTournamentDirector.ViewModels
                 return false;
             }
 
-            // Créer le tournoi
+            if (IsChampionshipMatch && SelectedChampionship == null)
+            {
+                CustomMessageBox.ShowWarning(
+                    "Veuillez sélectionner un championnat ou décocher l'option.",
+                    "Championnat requis");
+                return false;
+            }
+
             _tournament = new Tournament
             {
                 Name = TournamentName,
@@ -298,10 +599,10 @@ namespace PokerTournamentDirector.ViewModels
                 AllowRebuys = AllowRebuys,
                 RebuyAmount = AllowRebuys ? RebuyAmount : null,
                 MaxRebuysPerPlayer = MaxRebuysPerPlayer,
-                Status = TournamentStatus.Registration
+                Status = TournamentStatus.Registration,
+                RebuyMaxLevel = RebuyMaxLevel
             };
 
-            // Définir le type selon les options
             if (AllowRebuys)
             {
                 _tournament.Type = MaxRebuysPerPlayer == 0
@@ -317,78 +618,7 @@ namespace PokerTournamentDirector.ViewModels
             return true;
         }
 
-        [RelayCommand]
-        private async Task RegisterPlayerAsync()
-        {
-            if (SelectedAvailablePlayer == null || _tournament == null) return;
-
-            try
-            {
-                await _tournamentService.RegisterPlayerAsync(_tournament.Id, SelectedAvailablePlayer.Id);
-
-                RegisteredPlayers.Add(SelectedAvailablePlayer);
-                AvailablePlayers.Remove(SelectedAvailablePlayer);
-                SelectedAvailablePlayer = null;
-
-                TotalPlayers = RegisteredPlayers.Count;
-                UpdatePrizePool();
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.ShowError($"Erreur: {ex.Message}", "Erreur");
-            }
-        }
-
-        [RelayCommand]
-        private async Task UnregisterPlayerAsync()
-        {
-            if (SelectedRegisteredPlayer == null || _tournament == null) return;
-
-            try
-            {
-                await _tournamentService.UnregisterPlayerAsync(_tournament.Id, SelectedRegisteredPlayer.Id);
-
-                AvailablePlayers.Add(SelectedRegisteredPlayer);
-                RegisteredPlayers.Remove(SelectedRegisteredPlayer);
-
-                // Re-trier la liste des disponibles
-                var sorted = AvailablePlayers.OrderBy(p => p.Name).ToList();
-                AvailablePlayers.Clear();
-                foreach (var p in sorted) AvailablePlayers.Add(p);
-
-                SelectedRegisteredPlayer = null;
-
-                TotalPlayers = RegisteredPlayers.Count;
-                UpdatePrizePool();
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.ShowError($"Erreur: {ex.Message}", "Erreur");
-            }
-        }
-
-        [RelayCommand]
-        private async Task RegisterAllPlayersAsync()
-        {
-            if (_tournament == null) return;
-
-            var playersToRegister = AvailablePlayers.ToList();
-            foreach (var player in playersToRegister)
-            {
-                try
-                {
-                    await _tournamentService.RegisterPlayerAsync(_tournament.Id, player.Id);
-                    RegisteredPlayers.Add(player);
-                }
-                catch { /* Ignorer les erreurs individuelles */ }
-            }
-
-            AvailablePlayers.Clear();
-            TotalPlayers = RegisteredPlayers.Count;
-            UpdatePrizePool();
-        }
-
-        // === MÉTHODES POUR L'ÉTAPE 3 : GESTION DES TABLES ===
+        // === MÉTHODES ÉTAPE 3 : GESTION DES TABLES ===
 
         private async Task CreateTablesAsync()
         {
@@ -396,20 +626,16 @@ namespace PokerTournamentDirector.ViewModels
 
             try
             {
-                // Créer les tables
                 var tables = await _tableManagementService.CreateTablesAsync(_tournament.Id);
                 TableCount = tables.Count;
-
-                // Charger les tables créées
                 await LoadTableLayoutsAsync();
-
                 TablesCreated = true;
             }
             catch (Exception ex)
             {
                 CustomMessageBox.ShowError(
-    $"Erreur lors de la création des tables: {ex.Message}",
-    "Erreur");
+                    $"Erreur lors de la création des tables: {ex.Message}",
+                    "Erreur");
             }
         }
 
@@ -420,7 +646,6 @@ namespace PokerTournamentDirector.ViewModels
             var layouts = await _tableManagementService.GetTableLayoutAsync(_tournament.Id);
             TableLayouts = new ObservableCollection<TableLayout>(layouts);
 
-            // Vérifier l'équilibre
             if (layouts.Any())
             {
                 var playerCounts = layouts.Select(t => t.PlayerCount).ToList();
@@ -446,7 +671,6 @@ namespace PokerTournamentDirector.ViewModels
                 BalanceStatus = "Aucune table";
             }
 
-            // Vérifier si tous les joueurs sont placés
             await CheckAllPlayersAssignedAsync();
         }
 
@@ -459,7 +683,6 @@ namespace PokerTournamentDirector.ViewModels
             {
                 await _tableManagementService.AutoAssignPlayersAsync(_tournament.Id);
                 await LoadTableLayoutsAsync();
-
                 CustomMessageBox.ShowSuccess("Joueurs placés automatiquement !", "Succès");
             }
             catch (Exception ex)
@@ -484,8 +707,8 @@ namespace PokerTournamentDirector.ViewModels
                         .Select(m => $"• {m.PlayerName}: Table {m.FromTable} → Table {m.ToTable}"));
 
                     CustomMessageBox.ShowInformation(
-                     $"{result.Message}\n\n{movementDetails}",
-                     "Équilibrage effectué");
+                        $"{result.Message}\n\n{movementDetails}",
+                        "Équilibrage effectué");
                 }
                 else
                 {
@@ -498,6 +721,63 @@ namespace PokerTournamentDirector.ViewModels
             }
         }
 
+        public async Task LoadChampionshipsAsync()
+        {
+            var championships = await _championshipService.GetAllChampionshipsAsync(includeArchived: false);
+
+            var active = championships.Where(c =>
+                c.Status == ChampionshipStatus.Active ||
+                c.Status == ChampionshipStatus.Upcoming)
+                .ToList();
+
+            AvailableChampionships.Clear();
+            foreach (var c in active)
+            {
+                AvailableChampionships.Add(c);
+            }
+        }
+
+        [RelayCommand]
+        private async Task StartTournamentAsync()
+        {
+            if (_tournament == null || TotalPlayers < 2) return;
+
+            try
+            {
+                if (IsChampionshipMatch && SelectedChampionship == null)
+                {
+                    CustomMessageBox.ShowWarning(
+                        "Veuillez sélectionner un championnat.",
+                        "Championnat requis");
+                    return;
+                }
+
+                _tournament.Status = TournamentStatus.Running;
+                _tournament.StartTime = DateTime.Now;
+                await _tournamentService.UpdateTournamentAsync(_tournament);
+
+                if (IsChampionshipMatch && SelectedChampionship != null)
+                {
+                    await _championshipService.AddMatchAsync(
+                        championshipId: SelectedChampionship.Id,
+                        tournamentId: _tournament.Id,
+                        isFinal: IsFinalMatch,
+                        isMainEvent: IsMainEvent);
+
+                    CustomMessageBox.ShowSuccess(
+                        $"Tournoi ajouté au championnat '{SelectedChampionship.Name}' !",
+                        "Championnat");
+                }
+
+                TournamentReadyToStart?.Invoke(this, _tournament.Id);
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError(
+                    $"Erreur lors du démarrage : {ex.Message}",
+                    "Erreur");
+            }
+        }
 
         [RelayCommand]
         private async Task ToggleLockPlayerAsync(int tournamentPlayerId)
@@ -555,7 +835,6 @@ namespace PokerTournamentDirector.ViewModels
         {
             if (_tournament == null) return false;
 
-            // Recharger le tournoi avec tous les joueurs
             var tournament = await _tournamentService.GetTournamentAsync(_tournament.Id);
             if (tournament == null) return false;
 
@@ -571,8 +850,6 @@ namespace PokerTournamentDirector.ViewModels
             AllPlayersAssigned = await ValidateTableAssignmentsAsync();
         }
 
-        // === FIN MÉTHODES ÉTAPE 3 ===
-
         private void UpdatePrizePool()
         {
             TotalPrizePool = TotalPlayers * BuyIn;
@@ -583,21 +860,6 @@ namespace PokerTournamentDirector.ViewModels
             TotalPlayers = RegisteredPlayers.Count;
             UpdatePrizePool();
             CanStartTournament = TotalPlayers >= 2 && AllPlayersAssigned;
-        }
-
-        [RelayCommand]
-        private async Task StartTournamentAsync()
-        {
-            if (_tournament == null || TotalPlayers < 2) return;
-
-            // Les tables sont déjà créées à l'étape 3
-            // Mettre à jour le statut
-            _tournament.Status = TournamentStatus.Running;
-            _tournament.StartTime = DateTime.Now;
-            await _tournamentService.UpdateTournamentAsync(_tournament);
-
-            // Signaler que le tournoi est prêt
-            TournamentReadyToStart?.Invoke(this, _tournament.Id);
         }
 
         [RelayCommand]

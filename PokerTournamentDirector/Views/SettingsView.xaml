@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         Title="⚙️ Paramètres" 
-        Height="750" Width="950"
+        Height="850" Width="1000"
         Background="#1a1a2e"
         WindowStartupLocation="CenterScreen">
 
@@ -28,15 +28,35 @@
             <Setter Property="Margin" Value="0,10,0,5"/>
         </Style>
 
-        <Style x:Key="TextBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="#0f3460"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#00ff88"/>
-            <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="Padding" Value="10"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Height" Value="40"/>
+        <Style x:Key="TransparentIconButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="#00ff88"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#0f3460"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#16213e"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
+
     </Window.Resources>
 
     <Grid Margin="20">
@@ -58,6 +78,108 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
 
+                <!-- PARAMÈTRES ADMINISTRATIFS -->
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="📋 Paramètres Administratifs" Style="{StaticResource SectionTitleStyle}"/>
+
+                        <!-- EXERCICE -->
+                        <TextBlock Text="📅 Exercice Annuel" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,10,0,10"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Début de saison (jour/mois)" Style="{StaticResource LabelStyle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding FiscalYearStartDay}" Style="{StaticResource TextBoxStyle}"/>
+                                    <TextBlock Grid.Column="1" Text="/" Foreground="White" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="2" Text="{Binding FiscalYearStartMonth}" Style="{StaticResource TextBoxStyle}"/>
+                                </Grid>
+                                <TextBlock Text="Ex: 01/09 pour 1er septembre" Foreground="#666" FontSize="11" Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Fin de saison (jour/mois)" Style="{StaticResource LabelStyle}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" Text="{Binding FiscalYearEndDay}" Style="{StaticResource TextBoxStyle}"/>
+                                    <TextBlock Grid.Column="1" Text="/" Foreground="White" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="2" Text="{Binding FiscalYearEndMonth}" Style="{StaticResource TextBoxStyle}"/>
+                                </Grid>
+                                <TextBlock Text="Ex: 30/06 pour 30 juin" Foreground="#666" FontSize="11" Margin="0,3,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="Jour administratif" Style="{StaticResource LabelStyle}"/>
+                        <ComboBox SelectedIndex="{Binding AdministrativeDay}" Style="{StaticResource ComboBoxStyle}">
+                            <ComboBoxItem Content="Dimanche"/>
+                            <ComboBoxItem Content="Lundi"/>
+                            <ComboBoxItem Content="Mardi"/>
+                            <ComboBoxItem Content="Mercredi"/>
+                            <ComboBoxItem Content="Jeudi"/>
+                            <ComboBoxItem Content="Vendredi"/>
+                            <ComboBoxItem Content="Samedi"/>
+                        </ComboBox>
+                        <TextBlock Text="Les paiements seront alignés sur ce jour de la semaine" Foreground="#666" FontSize="11" Margin="0,3,0,0"/>
+
+                        <!-- COTISATION -->
+                        <TextBlock Text="💰 Cotisation" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,20,0,10"/>
+
+                        <TextBlock Text="Montant cotisation annuelle (€)" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding AnnualFee}" Style="{StaticResource TextBoxStyle}" Width="150" HorizontalAlignment="Left"/>
+
+                        <TextBlock Text="Période d'essai (semaines)" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding TrialPeriodWeeks}" Style="{StaticResource TextBoxStyle}" Width="150" HorizontalAlignment="Left"/>
+
+                        <TextBlock Text="Options de paiement échelonné" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding InstallmentOptions}" Style="{StaticResource TextBoxStyle}" Width="200" HorizontalAlignment="Left"/>
+                        <TextBlock Text="Séparées par virgule (ex: 2,3,4,6,10)" Foreground="#666" FontSize="11" Margin="0,3,0,0"/>
+
+                        <!-- PRORATA -->
+                        <TextBlock Text="📊 Prorata inscription tardive" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,20,0,10"/>
+
+                        <CheckBox Content="Activer le prorata pour inscriptions tardives" 
+                                 IsChecked="{Binding EnableProrata}"
+                                 Foreground="White" FontSize="14" Margin="0,5,0,10"/>
+
+                        <TextBlock Text="Mode de calcul prorata" Style="{StaticResource LabelStyle}"/>
+                        <ComboBox SelectedIndex="{Binding ProrataMode, Converter={StaticResource ProrataModeToIndexConverter}}" 
+                                 Style="{StaticResource ComboBoxStyle}">
+                            <ComboBoxItem Content="Mensuel" Tag="monthly"/>
+                            <ComboBoxItem Content="Pourcentage proportionnel" Tag="percentage"/>
+                        </ComboBox>
+                        <TextBlock Text="Mensuel : calcul par mois restants • Pourcentage : jours restants / jours total" 
+                                  Foreground="#666" FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- PARAMÈTRES GÉNÉRAUX -->
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="🔧 Paramètres Généraux des Tournois" Style="{StaticResource SectionTitleStyle}"/>
+
+                        <TextBlock Text="Durée par défaut des niveaux (minutes)" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding DefaultLevelDuration}" Style="{StaticResource TextBoxStyle}" Width="100" HorizontalAlignment="Left"/>
+
+                        <TextBlock Text="Durée par défaut des pauses (minutes)" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Text="{Binding DefaultBreakDuration}" Style="{StaticResource TextBoxStyle}" Width="100" HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- THÈME COULEURS -->
                 <Border Style="{StaticResource CardStyle}">
                     <Grid>
@@ -67,7 +189,7 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="🎨 Thème de couleurs" Style="{StaticResource SectionTitleStyle}"/>
+                            <TextBlock Text="🎨 Thème de Couleurs" Style="{StaticResource SectionTitleStyle}"/>
 
                             <TextBlock Text="Fond principal" Style="{StaticResource LabelStyle}"/>
                             <Grid>
@@ -148,15 +270,6 @@
                                 <TextBox Grid.Column="1" Text="{Binding DangerColor}" 
                                         Style="{StaticResource TextBoxStyle}" Width="100"/>
                             </Grid>
-
-                            <Button Content="🎨 RESET COULEURS UNIQUEMENT"
-                                   Command="{Binding ResetColorsOnlyCommand}"
-                                   Height="40"
-                                   Background="#0f3460"
-                                   Foreground="White"
-                                   FontSize="14"
-                                   FontWeight="Bold"
-                                   Margin="0,15,0,0"/>
                         </StackPanel>
 
                         <!-- APERÇU -->
@@ -211,69 +324,264 @@
                 <!-- PARAMÈTRES SONS -->
                 <Border Style="{StaticResource CardStyle}">
                     <StackPanel>
-                        <TextBlock Text="🔊 Sons et alertes" Style="{StaticResource SectionTitleStyle}"/>
+                        <TextBlock Text="🔊 Sons et Alertes" Style="{StaticResource SectionTitleStyle}"/>
 
                         <CheckBox Content="Activer tous les sons"
-                                 IsChecked="{Binding EnableSounds}"
-                                 Foreground="White"
-                                 FontSize="16"
-                                 FontWeight="Bold"
-                                 Margin="0,5,0,15"/>
+                  IsChecked="{Binding EnableSounds}"
+                  Foreground="White"
+                  FontSize="16"
+                  FontWeight="Bold"
+                  Margin="0,5,0,15"/>
 
                         <StackPanel Margin="20,0,0,0" IsEnabled="{Binding EnableSounds}">
-                            <CheckBox Content="Son pause / reprise"
-                                     IsChecked="{Binding SoundOnPauseResume}"
-                                     Foreground="White"
-                                     FontSize="14"
-                                     Margin="0,8"/>
 
-                            <CheckBox Content="Son à 60 secondes"
-                                     IsChecked="{Binding SoundOn60Seconds}"
-                                     Foreground="White"
-                                     FontSize="14"
-                                     Margin="0,8"/>
+                            <!-- Son pause / reprise -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <CheckBox Content="Son à 10 secondes"
-                                     IsChecked="{Binding SoundOn10Seconds}"
-                                     Foreground="White"
-                                     FontSize="14"
-                                     Margin="0,8"/>
+                                <CheckBox Content="Son pause / reprise"
+                          IsChecked="{Binding SoundOnPauseResume}"
+                          Foreground="White"
+                          FontSize="14"
+                          VerticalAlignment="Center"/>
 
-                            <CheckBox Content="Compte à rebours (3, 2, 1)"
-                                     IsChecked="{Binding SoundOnCountdown}"
-                                     Foreground="White"
-                                     FontSize="14"
-                                     Margin="0,8"/>
+                                <Button Grid.Column="1"
+                        Content="🔊"
+                        Width="32" Height="32"
+                        Margin="10,0,0,0"
+                        Style="{StaticResource TransparentIconButton}"  
+                                    Command="{Binding PlaySoundCommand}"
+                        CommandParameter="pause.mp3"/>
+                            </Grid>
 
-                            <CheckBox Content="Son changement de niveau"
-                                     IsChecked="{Binding SoundOnLevelChange}"
-                                     Foreground="White"
-                                     FontSize="14"
-                                     Margin="0,8"/>
+                            <!-- Son à 60 secondes -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Son à 60 secondes"
+                          IsChecked="{Binding SoundOn60Seconds}"
+                          Foreground="White"
+                          FontSize="14"
+                          VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+                        Content="🔊"
+                        Width="32" Height="32"
+                        Margin="10,0,0,0"
+                        Style="{StaticResource TransparentIconButton}"
+                        Command="{Binding PlaySoundCommand}"
+                        CommandParameter="60s.mp3"/>
+                            </Grid>
+
+                            <!-- Son à 10 secondes -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Son à 10 secondes"
+                          IsChecked="{Binding SoundOn10Seconds}"
+                          Foreground="White"
+                          FontSize="14"
+                          VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+                        Content="🔊"
+                        Width="32" Height="32"
+                        Margin="10,0,0,0"
+                        Style="{StaticResource TransparentIconButton}"
+                        Command="{Binding PlaySoundCommand}"
+                        CommandParameter="10s.mp3"/>
+                            </Grid>
+
+                            <!-- Compte à rebours (3, 2, 1) -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Compte à rebours (3, 2, 1)"
+                          IsChecked="{Binding SoundOnCountdown}"
+                          Foreground="White"
+                          FontSize="14"
+                          VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+                        Content="🔊"
+                        Width="32" Height="32"
+                        Margin="10,0,0,0"
+                        Style="{StaticResource TransparentIconButton}"
+                        Command="{Binding PlaySoundCommand}"
+                        CommandParameter="countdown.mp3"/>
+                            </Grid>
+                            <!-- Début de tournoi -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Début de tournoi"
+  IsChecked="{Binding SoundOnStart}"
+  Foreground="White"
+  FontSize="14"
+  VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+Content="🔊"
+Width="32" Height="32"
+Margin="10,0,0,0"
+Style="{StaticResource TransparentIconButton}"
+Command="{Binding PlaySoundCommand}"
+CommandParameter="start.mp3"/>
+                            </Grid>
+                            <!-- Son niveau de pause -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Son niveau de pause"
+  IsChecked="{Binding SoundOnBreak}"
+  Foreground="White"
+  FontSize="14"
+  VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+Content="🔊"
+Width="32" Height="32"
+Margin="10,0,0,0"
+Style="{StaticResource TransparentIconButton}"
+Command="{Binding PlaySoundCommand}"
+CommandParameter="break.mp3"/>
+                            </Grid>
+                            <!-- Son victoire -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Son après une victoire"
+  IsChecked="{Binding SoundOnWin}"
+  Foreground="White"
+  FontSize="14"
+  VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+Content="🔊"
+Width="32" Height="32"
+Margin="10,0,0,0"
+Style="{StaticResource TransparentIconButton}"
+Command="{Binding PlaySoundCommand}"
+CommandParameter="bravo.mp3"/>
+                            </Grid>
+                            <!-- Son Kill -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Son à l'éminitation d'un joueur"
+  IsChecked="{Binding SoundOnKill}"
+  Foreground="White"
+  FontSize="14"
+  VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+Content="🔊"
+Width="32" Height="32"
+Margin="10,0,0,0"
+Style="{StaticResource TransparentIconButton}"
+Command="{Binding PlaySoundCommand}"
+CommandParameter="kill.mp3"/>
+                            </Grid>
+                            <!-- Annulation élimination -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Annulation élimination"
+  IsChecked="{Binding SoundOnUndoKill}"
+  Foreground="White"
+  FontSize="14"
+  VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+Content="🔊"
+Width="32" Height="32"
+Margin="10,0,0,0"
+Style="{StaticResource TransparentIconButton}"
+Command="{Binding PlaySoundCommand}"
+CommandParameter="undo.mp3"/>
+                            </Grid>
+                            <!-- Son recave -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Recave"
+  IsChecked="{Binding SoundOnRebuy}"
+  Foreground="White"
+  FontSize="14"
+  VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+Content="🔊"
+Width="32" Height="32"
+Margin="10,0,0,0"
+Style="{StaticResource TransparentIconButton}"
+Command="{Binding PlaySoundCommand}"
+CommandParameter="rebuy.mp3"/>
+                            </Grid>
+
+                            <!-- Son changement de niveau -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Content="Son changement de niveau"
+                          IsChecked="{Binding SoundOnLevelChange}"
+                          Foreground="White"
+                          FontSize="14"
+                          VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+                        Content="🔊"
+                        Width="32" Height="32"
+                        Margin="10,0,0,0"
+                        Style="{StaticResource TransparentIconButton}"
+                        Command="{Binding PlaySoundCommand}"
+                        CommandParameter="level.mp3"/>
+                            </Grid>
+
                         </StackPanel>
 
                         <Button Content="🔊 Tester le son"
-                               Command="{Binding TestSoundCommand}"
-                               Height="40"
-                               Width="150"
-                               HorizontalAlignment="Left"
-                               Background="#0f3460"
-                               Foreground="White"
-                               FontSize="14"
-                               Margin="0,15,0,0"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- PARAMÈTRES GÉNÉRAUX -->
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="🔧 Paramètres généraux" Style="{StaticResource SectionTitleStyle}"/>
-
-                        <TextBlock Text="Durée par défaut des niveaux (minutes)" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding DefaultLevelDuration}" Style="{StaticResource TextBoxStyle}" Width="100" HorizontalAlignment="Left"/>
-
-                        <TextBlock Text="Durée par défaut des pauses (minutes)" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Text="{Binding DefaultBreakDuration}" Style="{StaticResource TextBoxStyle}" Width="100" HorizontalAlignment="Left"/>
+                Command="{Binding TestSoundCommand}"
+                Height="40"
+                Width="150"
+                HorizontalAlignment="Left"
+                Background="#0f3460"
+                Foreground="White"
+                FontSize="14"
+                Margin="0,15,0,0"/>
                     </StackPanel>
                 </Border>
 

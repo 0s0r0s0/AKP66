@@ -16,6 +16,14 @@ namespace PokerTournamentDirector.Data
         public DbSet<PlayerRebuy> PlayerRebuys { get; set; }
         public DbSet<AppSettings> AppSettings { get; set; }
         public DbSet<TournamentTemplate> TournamentTemplates { get; set; }
+        public DbSet<Championship> Championships { get; set; }
+        public DbSet<ChampionshipMatch> ChampionshipMatches { get; set; }
+        public DbSet<ChampionshipStanding> ChampionshipStandings { get; set; }
+        public DbSet<ChampionshipLog> ChampionshipLogs { get; set; }
+        public DbSet<TournamentLog> TournamentLogs { get; set; }
+        public DbSet<PaymentSchedule> PaymentSchedules { get; set; }
+        public DbSet<PlayerLog> PlayerLogs { get; set; }
+
 
         // Alias pour compatibilité avec le code existant
         public DbSet<PokerTable> TournamentTables => PokerTables;

@@ -11,7 +11,7 @@ using PokerTournamentDirector.Data;
 namespace PokerTournamentDirector.Migrations
 {
     [DbContext(typeof(PokerDbContext))]
-    [Migration("20260121100809_InitialCreateWithPokerTables")]
+    [Migration("20260125155847_InitialCreateWithPokerTables")]
     partial class InitialCreateWithPokerTables
     {
         /// <inheritdoc />
@@ -28,6 +28,12 @@ namespace PokerTournamentDirector.Migrations
 
                     b.Property<string>("AccentColor")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AdministrativeDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("AnnualFee")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("BackgroundColor")
@@ -48,10 +54,30 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<int>("DefaultLevelDuration")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("EnableProrata")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("EnableSounds")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("LastModified")
+                    b.Property<int>("FiscalYearEndDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FiscalYearEndMonth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FiscalYearStartDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FiscalYearStartMonth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("InstallmentOptions")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProrataMode")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("SoundOn10Seconds")
@@ -67,6 +93,9 @@ namespace PokerTournamentDirector.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("SoundOnPauseResume")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TrialPeriodWeeks")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("WarningColor")
@@ -343,17 +372,383 @@ namespace PokerTournamentDirector.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedDate = new DateTime(2026, 1, 21, 11, 8, 9, 406, DateTimeKind.Local).AddTicks(2748),
+                            CreatedDate = new DateTime(2026, 1, 25, 16, 58, 46, 663, DateTimeKind.Local).AddTicks(4314),
                             Description = "Structure classique pour home games",
                             Name = "Standard (2h)"
                         },
                         new
                         {
                             Id = 2,
-                            CreatedDate = new DateTime(2026, 1, 21, 11, 8, 9, 406, DateTimeKind.Local).AddTicks(2896),
+                            CreatedDate = new DateTime(2026, 1, 25, 16, 58, 46, 663, DateTimeKind.Local).AddTicks(4478),
                             Description = "Structure rapide, niveaux de 12 minutes",
                             Name = "Turbo (1h30)"
                         });
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.Championship", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowLateRegistration")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowRetroactivePoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("BestXOfSeason")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("BestXPerMonth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("BestXPerQuarter")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("CountBounties")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CountingMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("DefaultMatchCoefficient")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EnableMonthlyStandings")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("EnableParticipationPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("EnableQuarterlyStandings")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("EnableSeasonPrizes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ExcludeWorstX")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("FinalMatchCoefficient")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("FirstEliminatedConsolation")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FixedPointsTable")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("GenerateProvisionalAfterEachMatch")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsOpenChampionship")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("LateRegistrationUntilMatch")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LinearFirstPlacePoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LogoPath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("MainEventCoefficient")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ParticipationPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PeriodType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PointsMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PointsPerBounty")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PrizeDistribution")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProportionalTotalPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("QualificationMinMatches")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("QualificationMinPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("QualificationTopX")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("RebuyLimit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RebuyMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("RebuyPointsMultiplier")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RebuyPointsPenalty")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Season")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("SeasonPrizePool")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ThemeColor")
+                        .HasMaxLength(7)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Tiebreaker1")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Tiebreaker2")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Tiebreaker3")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Top3Bonus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("VictoryBonus")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Championships");
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.ChampionshipLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AfterData")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BeforeData")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ChampionshipId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("MatchId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PlayerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChampionshipId");
+
+                    b.ToTable("ChampionshipLogs");
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.ChampionshipMatch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChampionshipId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Coefficient")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsMainEvent")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("MatchDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MatchNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TournamentId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChampionshipId");
+
+                    b.HasIndex("TournamentId");
+
+                    b.ToTable("ChampionshipMatches");
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.ChampionshipStanding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AverageMinutesPerMatch")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("AveragePosition")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("BestPosition")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChampionshipId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CurrentPosition")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EliminatedMostByPlayerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EliminatedMostPlayerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsQualified")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MatchesPlayed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("MonthlyPoints")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("PositionStdDev")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("PreviousPosition")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("QuarterlyPoints")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("ROI")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RebuysUsed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Top3Finishes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalBounties")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalMinutesPlayed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TotalPoints")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("TotalWinnings")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Victories")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("WorstPosition")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChampionshipId");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("ChampionshipStandings");
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.PaymentSchedule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("PaidDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("PaymentSchedules");
                 });
 
             modelBuilder.Entity("PokerTournamentDirector.Models.Player", b =>
@@ -362,6 +757,10 @@ namespace PokerTournamentDirector.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("TEXT");
 
@@ -369,12 +768,21 @@ namespace PokerTournamentDirector.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("InstallmentCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastTournamentDate")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("NextDueDate")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nickname")
@@ -384,11 +792,26 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("Paid")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PaymentStatus")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PhotoPath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RegistrationDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("TotalDue")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("TotalITM")
@@ -403,11 +826,40 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<int>("TotalWins")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("TrialEnd")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
 
                     b.ToTable("Players");
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.PlayerLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PlayerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("PlayerLogs");
                 });
 
             modelBuilder.Entity("PokerTournamentDirector.Models.PlayerRebuy", b =>
@@ -602,6 +1054,45 @@ namespace PokerTournamentDirector.Migrations
                     b.ToTable("Tournaments");
                 });
 
+            modelBuilder.Entity("PokerTournamentDirector.Models.TournamentLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PlayersRemaining")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TournamentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TournamentId");
+
+                    b.ToTable("TournamentLogs");
+                });
+
             modelBuilder.Entity("PokerTournamentDirector.Models.TournamentPlayer", b =>
                 {
                     b.Property<int>("Id")
@@ -615,6 +1106,12 @@ namespace PokerTournamentDirector.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("CurrentStack")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("EliminatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EliminatedById")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("EliminatedByPlayerId")
@@ -784,6 +1281,77 @@ namespace PokerTournamentDirector.Migrations
                     b.Navigation("BlindStructure");
                 });
 
+            modelBuilder.Entity("PokerTournamentDirector.Models.ChampionshipLog", b =>
+                {
+                    b.HasOne("PokerTournamentDirector.Models.Championship", "Championship")
+                        .WithMany("Logs")
+                        .HasForeignKey("ChampionshipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Championship");
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.ChampionshipMatch", b =>
+                {
+                    b.HasOne("PokerTournamentDirector.Models.Championship", "Championship")
+                        .WithMany("Matches")
+                        .HasForeignKey("ChampionshipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PokerTournamentDirector.Models.Tournament", "Tournament")
+                        .WithMany("ChampionshipMatches")
+                        .HasForeignKey("TournamentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Championship");
+
+                    b.Navigation("Tournament");
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.ChampionshipStanding", b =>
+                {
+                    b.HasOne("PokerTournamentDirector.Models.Championship", "Championship")
+                        .WithMany("Standings")
+                        .HasForeignKey("ChampionshipId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PokerTournamentDirector.Models.Player", "Player")
+                        .WithMany()
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Championship");
+
+                    b.Navigation("Player");
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.PaymentSchedule", b =>
+                {
+                    b.HasOne("PokerTournamentDirector.Models.Player", "Player")
+                        .WithMany("PaymentSchedules")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Player");
+                });
+
+            modelBuilder.Entity("PokerTournamentDirector.Models.PlayerLog", b =>
+                {
+                    b.HasOne("PokerTournamentDirector.Models.Player", "Player")
+                        .WithMany("Logs")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Player");
+                });
+
             modelBuilder.Entity("PokerTournamentDirector.Models.PlayerRebuy", b =>
                 {
                     b.HasOne("PokerTournamentDirector.Models.Player", "Player")
@@ -831,6 +1399,17 @@ namespace PokerTournamentDirector.Migrations
                     b.Navigation("Template");
                 });
 
+            modelBuilder.Entity("PokerTournamentDirector.Models.TournamentLog", b =>
+                {
+                    b.HasOne("PokerTournamentDirector.Models.Tournament", "Tournament")
+                        .WithMany()
+                        .HasForeignKey("TournamentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tournament");
+                });
+
             modelBuilder.Entity("PokerTournamentDirector.Models.TournamentPlayer", b =>
                 {
                     b.HasOne("PokerTournamentDirector.Models.Player", "Player")
@@ -873,8 +1452,21 @@ namespace PokerTournamentDirector.Migrations
                     b.Navigation("Levels");
                 });
 
+            modelBuilder.Entity("PokerTournamentDirector.Models.Championship", b =>
+                {
+                    b.Navigation("Logs");
+
+                    b.Navigation("Matches");
+
+                    b.Navigation("Standings");
+                });
+
             modelBuilder.Entity("PokerTournamentDirector.Models.Player", b =>
                 {
+                    b.Navigation("Logs");
+
+                    b.Navigation("PaymentSchedules");
+
                     b.Navigation("Rebuys");
 
                     b.Navigation("TournamentParticipations");
@@ -887,6 +1479,8 @@ namespace PokerTournamentDirector.Migrations
 
             modelBuilder.Entity("PokerTournamentDirector.Models.Tournament", b =>
                 {
+                    b.Navigation("ChampionshipMatches");
+
                     b.Navigation("Players");
 
                     b.Navigation("Rebuys");

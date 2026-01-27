@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+/// v2.0 - Gestion des structures de blinds 
 namespace PokerTournamentDirector.Services
 {
     public class BlindStructureService
@@ -17,6 +18,11 @@ namespace PokerTournamentDirector.Services
             _context = context;
         }
 
+        #region Opérations CRUD
+
+        /// <summary>
+        /// Récupère toutes les structures de blinds triées par nom.
+        /// </summary>
         public async Task<List<BlindStructure>> GetAllStructuresAsync()
         {
             return await _context.BlindStructures
@@ -25,6 +31,9 @@ namespace PokerTournamentDirector.Services
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// Récupère une structure de blinds par son identifiant, avec ses niveaux.
+        /// </summary>
         public async Task<BlindStructure?> GetStructureAsync(int id)
         {
             return await _context.BlindStructures
@@ -32,6 +41,9 @@ namespace PokerTournamentDirector.Services
                 .FirstOrDefaultAsync(bs => bs.Id == id);
         }
 
+        /// <summary>
+        /// Crée une nouvelle structure de blinds dans la base de données.
+        /// </summary>
         public async Task<BlindStructure> CreateStructureAsync(BlindStructure structure)
         {
             _context.BlindStructures.Add(structure);
@@ -39,12 +51,18 @@ namespace PokerTournamentDirector.Services
             return structure;
         }
 
+        /// <summary>
+        /// Met à jour une structure de blinds existante.
+        /// </summary>
         public async Task UpdateStructureAsync(BlindStructure structure)
         {
             _context.BlindStructures.Update(structure);
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Supprime une structure de blinds par son identifiant.
+        /// </summary>
         public async Task DeleteStructureAsync(int id)
         {
             var structure = await _context.BlindStructures.FindAsync(id);
@@ -55,6 +73,9 @@ namespace PokerTournamentDirector.Services
             }
         }
 
+        /// <summary>
+        /// Duplique une structure de blinds existante avec un nouveau nom.
+        /// </summary>
         public async Task<BlindStructure> DuplicateStructureAsync(int sourceId, string newName)
         {
             var source = await GetStructureAsync(sourceId);
@@ -90,7 +111,14 @@ namespace PokerTournamentDirector.Services
             return newStructure;
         }
 
-        // Générateur automatique de structure
+        #endregion
+
+        #region Génération automatique de structure
+
+        /// <summary>
+        /// Génère une structure de blinds automatique adaptée au type de tournoi, 
+        /// avec progression fluide, pauses intelligentes et cible finale réaliste.
+        /// </summary>
         public BlindStructure GenerateStructure(
             string name,
             int targetDurationMinutes,
@@ -98,55 +126,133 @@ namespace PokerTournamentDirector.Services
             int levelDurationMinutes,
             bool withAnte,
             int numberOfBreaks,
-            int breakDurationMinutes)
+            int breakDurationMinutes,
+            int autoStartingStack,
+            int autoAveragePlayers)
         {
             var structure = new BlindStructure
             {
                 Name = name,
-                Description = $"Structure auto-générée ({targetDurationMinutes} min)"
+                Description = $"Auto – {targetDurationMinutes} min – ~{autoAveragePlayers} joueurs – Stack {autoStartingStack} ({autoStartingStack / (startingSmallBlind * 2)} BB départ)"
             };
 
-            // Calculer combien de niveaux de jeu on peut avoir
             int totalBreakTime = numberOfBreaks * breakDurationMinutes;
             int playTime = targetDurationMinutes - totalBreakTime;
             int numberOfLevels = playTime / levelDurationMinutes;
+            if (numberOfLevels < 6) numberOfLevels = 6;
 
-            // Calculer à quels niveaux placer les pauses (réparties équitablement)
-            var breakLevels = new HashSet<int>();
-            if (numberOfBreaks > 0)
+            var breakPositions = CalculateBreakPositions(numberOfLevels, numberOfBreaks);
+
+            long totalChips = (long)autoStartingStack * autoAveragePlayers;
+            long targetFinalBB = withAnte ? totalChips / 25 : totalChips / 20;
+            long targetFinalSB = targetFinalBB / 2;
+
+            TournamentSpeed speed = DetermineTournamentSpeed(playTime, numberOfLevels);
+
+            var levels = GenerateLevels(
+                startingSmallBlind,
+                targetFinalSB,
+                numberOfLevels,
+                levelDurationMinutes,
+                breakDurationMinutes,
+                breakPositions,
+                withAnte,
+                speed);
+
+            structure.Levels = levels;
+            return structure;
+        }
+
+        #endregion
+
+        #region Vitesse du tournoi et position des pauses
+
+        private enum TournamentSpeed
+        {
+            Turbo,   // < 2h ou niveaux très courts
+            Fast,    // 2-3h
+            Normal,  // 3-4h
+            Deep     // > 4h
+        }
+
+        private TournamentSpeed DetermineTournamentSpeed(int playTimeMinutes, int numberOfLevels)
+        {
+            int avgLevelMinutes = playTimeMinutes / numberOfLevels;
+
+            if (playTimeMinutes < 120 || avgLevelMinutes < 12) return TournamentSpeed.Turbo;
+            if (playTimeMinutes < 180) return TournamentSpeed.Fast;
+            if (playTimeMinutes < 240) return TournamentSpeed.Normal;
+            return TournamentSpeed.Deep;
+        }
+
+        private HashSet<int> CalculateBreakPositions(int numberOfLevels, int numberOfBreaks)
+        {
+            var positions = new HashSet<int>();
+
+            if (numberOfBreaks == 0 || numberOfLevels <= numberOfBreaks)
+                return positions;
+
+            int usableRange = numberOfLevels - 2;
+            int interval = usableRange / (numberOfBreaks + 1);
+
+            for (int i = 1; i <= numberOfBreaks; i++)
             {
-                int intervalBetweenBreaks = numberOfLevels / (numberOfBreaks + 1);
-                for (int i = 1; i <= numberOfBreaks; i++)
-                {
-                    breakLevels.Add(i * intervalBetweenBreaks);
-                }
+                int pos = 1 + (i * interval);
+                if (pos > 0 && pos < numberOfLevels)
+                    positions.Add(pos);
             }
 
-            var levels = new List<BlindLevel>();
-            int sb = startingSmallBlind;
-            int levelNumber = 1;
-            int playLevelCount = 0;
+            return positions;
+        }
 
-            while (playLevelCount < numberOfLevels)
+        #endregion
+
+        #region Génération des niveaux
+
+        private List<BlindLevel> GenerateLevels(
+            int startingSB,
+            long targetFinalSB,
+            int numberOfLevels,
+            int levelDuration,
+            int breakDuration,
+            HashSet<int> breakPositions,
+            bool withAnte,
+            TournamentSpeed speed)
+        {
+            var levels = new List<BlindLevel>();
+            int levelNumber = 1;
+            int currentSB = startingSB;
+
+            var progression = GetProgressionFactors(speed, numberOfLevels);
+
+            for (int playLevel = 1; playLevel <= numberOfLevels; playLevel++)
             {
-                // Niveau de jeu
-                int bb = sb * 2;
-                int ante = withAnte ? (sb / 2) : 0;
+                int currentBB = currentSB * 2;
+                int currentAnte = 0;
+
+                if (withAnte && currentSB >= 100)
+                {
+                    currentAnte = currentBB;
+                }
 
                 levels.Add(new BlindLevel
                 {
                     LevelNumber = levelNumber++,
-                    SmallBlind = sb,
-                    BigBlind = bb,
-                    Ante = ante,
-                    DurationMinutes = levelDurationMinutes,
+                    SmallBlind = currentSB,
+                    BigBlind = currentBB,
+                    Ante = currentAnte,
+                    DurationMinutes = levelDuration,
                     IsBreak = false
                 });
 
-                playLevelCount++;
+                if (playLevel < numberOfLevels)
+                {
+                    double factor = progression[playLevel - 1];
+                    int nextSB = CalculateNextBlind(currentSB, factor, playLevel, numberOfLevels, targetFinalSB, speed);
+                    currentSB = nextSB;
+                }
 
-                // Insérer une pause si nécessaire
-                if (breakLevels.Contains(playLevelCount))
+                if (breakPositions.Contains(playLevel))
                 {
                     levels.Add(new BlindLevel
                     {
@@ -154,58 +260,142 @@ namespace PokerTournamentDirector.Services
                         SmallBlind = 0,
                         BigBlind = 0,
                         Ante = 0,
-                        DurationMinutes = breakDurationMinutes,
+                        DurationMinutes = breakDuration,
                         IsBreak = true,
-                        BreakName = $"Pause {breakDurationMinutes} min"
+                        BreakName = $"Pause {breakDuration} min"
                     });
                 }
-
-                // Progression : doubler la SB tous les 2-3 niveaux pour ralentir la progression
-                if (playLevelCount % 2 == 0)
-                {
-                    sb = (int)(sb * 1.5);
-                }
-                else if (playLevelCount % 3 == 0)
-                {
-                    sb *= 2;
-                }
-                else
-                {
-                    sb = (int)(sb * 1.25);
-                }
-
-                // Arrondir à des valeurs propres
-                sb = RoundToNice(sb);
             }
 
-            structure.Levels = levels;
-            return structure;
+            return levels;
         }
 
-        private int RoundToNice(int value)
+        private List<double> GetProgressionFactors(TournamentSpeed speed, int numberOfLevels)
         {
-            // Arrondir à des valeurs "propres" (25, 50, 75, 100, 150, 200, etc.)
-            if (value <= 100)
+            var factors = new List<double>();
+
+            for (int i = 0; i < numberOfLevels - 1; i++)
             {
-                return (int)(Math.Round(value / 25.0) * 25);
+                double progress = (double)i / (numberOfLevels - 1);
+                double factor = speed switch
+                {
+                    TournamentSpeed.Turbo => progress < 0.3 ? 1.6 : progress < 0.7 ? 1.7 : 1.8,
+                    TournamentSpeed.Fast => progress < 0.4 ? 1.45 : progress < 0.7 ? 1.55 : 1.65,
+                    TournamentSpeed.Normal => progress < 0.5 ? 1.35 : progress < 0.8 ? 1.45 : 1.55,
+                    TournamentSpeed.Deep => progress < 0.6 ? 1.3 : progress < 0.85 ? 1.4 : 1.5,
+                    _ => 1.5
+                };
+
+                factors.Add(factor);
             }
-            else if (value <= 500)
-            {
-                return (int)(Math.Round(value / 50.0) * 50);
-            }
-            else if (value <= 1000)
-            {
-                return (int)(Math.Round(value / 100.0) * 100);
-            }
-            else
-            {
-                return (int)(Math.Round(value / 500.0) * 500);
-            }
+
+            return factors;
         }
 
+        private int CalculateNextBlind(
+            int currentSB,
+            double factor,
+            int currentLevel,
+            int totalLevels,
+            long targetFinalSB,
+            TournamentSpeed speed)
+        {
+            bool skipIntermediate = speed is TournamentSpeed.Turbo or TournamentSpeed.Fast;
+
+            int? forcedNext = currentSB switch
+            {
+                25 => 50,
+                50 => skipIntermediate ? 100 : 75,
+                75 => 100,
+                100 => skipIntermediate ? 200 : 150,
+                150 => 200,
+                200 => skipIntermediate ? 400 : 300,
+                300 => 500,
+                400 => 600,
+                500 => 800,
+                600 => 1000,
+                800 => 1200,
+                1000 => 1500,
+                _ => null
+            };
+
+            if (forcedNext.HasValue)
+                return forcedNext.Value;
+
+            double remainingLevels = totalLevels - currentLevel;
+            if (remainingLevels <= 3 && currentSB < targetFinalSB)
+            {
+                double neededFactor = Math.Pow((double)targetFinalSB / currentSB, 1.0 / remainingLevels);
+                factor = Math.Max(factor, neededFactor);
+            }
+
+            long nextSBLong = (long)(currentSB * factor);
+            int nextSB = RoundToNice((int)nextSBLong, currentSB);
+
+            if (nextSB <= currentSB)
+            {
+                int minJump = currentSB switch
+                {
+                    <= 100 => 25,
+                    <= 500 => 50,
+                    <= 1000 => 100,
+                    <= 5000 => 500,
+                    _ => 1000
+                };
+                nextSB = RoundToNice(currentSB + minJump, currentSB);
+            }
+
+            return nextSB;
+        }
+
+        #endregion
+
+        #region Arrondi intelligent
+
+        private int RoundToNice(int value, int currentSB)
+        {
+            int currentBB = currentSB * 2;
+
+            if (currentBB >= 100000) return (int)(Math.Round(value / 5000.0) * 5000);
+            if (currentBB >= 10000) return (int)(Math.Round(value / 1000.0) * 1000);
+            if (currentBB >= 1000) return (int)(Math.Round(value / 100.0) * 100);
+
+            if (value <= 100)
+                return (int)(Math.Round(value / 25.0) * 25);
+
+            if (value <= 500)
+            {
+                int rounded = (int)(Math.Round(value / 50.0) * 50);
+                return rounded == 450 ? 500 : rounded;
+            }
+
+            if (value <= 1000)
+                return (int)(Math.Round(value / 100.0) * 100);
+
+            if (value <= 5000)
+                return (int)(Math.Round(value / 500.0) * 500);
+
+            if (value <= 10000)
+                return (int)(Math.Round(value / 1000.0) * 1000);
+
+            if (value <= 50000)
+                return (int)(Math.Round(value / 5000.0) * 5000);
+
+            return (int)(Math.Round(value / 50000.0) * 50000);
+        }
+
+        #endregion
+
+        #region Utilitaires
+
+        /// <summary>
+        /// Calcule la durée totale de la structure (niveaux + pauses).
+        /// </summary>
         public int CalculateTotalDuration(BlindStructure structure)
         {
             return structure.Levels.Sum(l => l.DurationMinutes);
         }
+
+        #endregion
     }
 }

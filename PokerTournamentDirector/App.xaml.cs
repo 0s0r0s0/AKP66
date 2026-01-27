@@ -46,6 +46,8 @@ namespace PokerTournamentDirector
             services.AddSingleton<TableManagementService>();
             services.AddSingleton<AudioService>();
             services.AddTransient<TableManagementService>();
+            services.AddTransient<ChampionshipService>();
+            services.AddScoped<TournamentLogService>();
 
             // ViewModels
             services.AddTransient<TournamentTimerViewModel>();
@@ -54,6 +56,7 @@ namespace PokerTournamentDirector
             services.AddTransient<SettingsViewModel>();
             services.AddTransient<BlindStructureEditorViewModel>();
             services.AddTransient<TournamentTemplateViewModel>();
+
         }
 
         protected override void OnExit(ExitEventArgs e)

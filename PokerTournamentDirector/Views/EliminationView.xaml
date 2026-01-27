@@ -1,377 +1,503 @@
 <Window x:Class="PokerTournamentDirector.Views.EliminationView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="💀 Éliminations &amp; Recaves" 
-        Height="800" Width="1200"
+        Title="💀 Éliminations"
+        Height="900" Width="1280"
+        WindowStartupLocation="CenterScreen"
         Background="#1a1a2e"
-        WindowStartupLocation="CenterScreen">
+        WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
-        <Style x:Key="CardStyle" TargetType="Border">
+        <!-- Ombre réutilisable -->
+        <DropShadowEffect x:Key="CardShadow" Color="Black" Direction="320" ShadowDepth="5" BlurRadius="15" Opacity="0.5"/>
+
+        <!-- Style ComboBox amélioré -->
+        <Style x:Key="BeautifulComboBox" TargetType="ComboBox">
             <Setter Property="Background" Value="#16213e"/>
-            <Setter Property="CornerRadius" Value="15"/>
-            <Setter Property="Padding" Value="20"/>
-            <Setter Property="Margin" Value="10"/>
-            <Setter Property="BorderBrush" Value="#0f3460"/>
-            <Setter Property="BorderThickness" Value="2"/>
-        </Style>
-
-        <Style x:Key="TitleStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="24"/>
-            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Margin" Value="0,0,0,15"/>
-        </Style>
+            <Setter Property="BorderBrush" Value="#00ff88"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Height" Value="52"/>
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton" 
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          Background="{TemplateBinding Background}"
+                                          Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          ClickMode="Press">
+                                <ToggleButton.Template>
+                                    <ControlTemplate>
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ContentPresenter Grid.Column="0"
+                                                                  Margin="{TemplateBinding Padding}"
+                                                                  VerticalAlignment="Center"
+                                                                  HorizontalAlignment="Left"/>
+                                                <Path Grid.Column="1"
+                                                      Data="M 0 0 L 4 4 L 8 0 Z"
+                                                      Fill="White"
+                                                      Margin="0,0,12,0"
+                                                      VerticalAlignment="Center"
+                                                      HorizontalAlignment="Right"/>
+                                            </Grid>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
 
-        <Style x:Key="ListBoxPlayerStyle" TargetType="ListBox">
-            <Setter Property="Background" Value="#0f3460"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="16"/>
-        </Style>
+                            <ContentPresenter x:Name="ContentSite"
+                                              IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"/>
 
-        <Style TargetType="ListBoxItem">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Padding" Value="15,10"/>
-            <Setter Property="Margin" Value="2"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#00ff88"/>
-                    <Setter Property="Foreground" Value="#1a1a2e"/>
-                </Trigger>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#1a2332"/>
-                </Trigger>
-            </Style.Triggers>
+                            <Popup x:Name="Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <Grid MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                      SnapsToDevicePixels="True">
+                                    <Border x:Name="DropDownBorder"
+                                            Background="#16213e"
+                                            BorderThickness="1"
+                                            BorderBrush="#00ff88"
+                                            CornerRadius="8"
+                                            Effect="{StaticResource CardShadow}">
+                                        <ScrollViewer Margin="4" SnapsToDevicePixels="True">
+                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1e2a44"/>
+                                <Setter Property="BorderBrush" Value="#00ffaa"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter Property="BorderBrush" Value="#00ff88"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Border Background="#1a1a2e"
+            CornerRadius="16"
+            BorderThickness="1"
+            BorderBrush="#0f3460"
+            Effect="{StaticResource CardShadow}">
 
-        <!-- STATS BAR -->
-        <Border Grid.Row="0" Background="#0f3460" CornerRadius="15" Padding="20" Margin="0,0,0,10">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+        <Grid Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                    <TextBlock Text="JOUEURS RESTANTS" FontSize="14" Foreground="#a0a0a0" HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding PlayersRemaining}" FontSize="42" FontWeight="Bold" Foreground="#00ff88" HorizontalAlignment="Center"/>
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                    <TextBlock Text="ÉLIMINATIONS" FontSize="14" Foreground="#a0a0a0" HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding TotalEliminations}" FontSize="42" FontWeight="Bold" Foreground="#e94560" HorizontalAlignment="Center"/>
-                </StackPanel>
-
-                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                    <TextBlock Text="PRIZE POOL" FontSize="14" Foreground="#a0a0a0" HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding CurrentPrizePool, StringFormat='{}{0:N0} €'}" FontSize="42" FontWeight="Bold" Foreground="#ffd700" HorizontalAlignment="Center"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- CONTENU PRINCIPAL -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="1.3*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- JOUEUR ÉLIMINÉ -->
-            <Border Grid.Column="0" Style="{StaticResource CardStyle}">
+            <!-- HEADER -->
+            <Border Grid.Row="0" Background="#0f3460" CornerRadius="12" Padding="24" Margin="0,0,0,20">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Text="💀 Joueur éliminé" Style="{StaticResource TitleStyle}"/>
-
-                    <ListBox Grid.Row="1"
-                            ItemsSource="{Binding ActivePlayers}"
-                            SelectedItem="{Binding SelectedEliminatedPlayer}"
-                            Style="{StaticResource ListBoxPlayerStyle}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="{Binding Player.Name}" FontWeight="Bold" FontSize="16"/>
-                                        <TextBlock Text="{Binding Player.Nickname, StringFormat='@{0}'}" 
-                                                  FontSize="12" 
-                                                  Foreground="#a0a0a0"
-                                                  Visibility="{Binding Player.Nickname, Converter={StaticResource NullToCollapsedConverter}}"/>
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                        <TextBlock Text="{Binding CurrentStack, StringFormat='{}{0:N0}'}" 
-                                                  FontSize="14" 
-                                                  FontWeight="Bold"
-                                                  Foreground="#00ff88"/>
-                                        <TextBlock Text="{Binding RebuyCount, StringFormat='🔄 {0}'}" 
-                                                  FontSize="11" 
-                                                  Foreground="#ffd700"
-                                                  HorizontalAlignment="Right"
-                                                  Visibility="{Binding RebuyCount, Converter={StaticResource ZeroToCollapsedConverter}}"/>
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Grid>
-            </Border>
-
-            <!-- KILLER (optionnel) - Liste filtrée pour exclure le joueur sélectionné -->
-            <Border Grid.Column="1" Style="{StaticResource CardStyle}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0">
-                        <TextBlock Text="🎯 Éliminé par (optionnel)" Style="{StaticResource TitleStyle}"/>
-                        <TextBlock Text="⚠️ Un joueur ne peut pas s'éliminer lui-même" 
-                                  FontSize="12" 
-                                  Foreground="#ffd700" 
-                                  FontStyle="Italic"
-                                  Margin="0,-10,0,10"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <TextBlock Text="💀" FontSize="42" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                        <StackPanel>
+                            <TextBlock Text="ÉLIMINATIONS" FontSize="28" FontWeight="Bold" Foreground="#00ff88"/>
+                            <TextBlock Text="Sélectionnez le joueur éliminé" FontSize="14" Foreground="#a0a0a0" Margin="0,4,0,0"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <!-- Utiliser AvailableKillers au lieu de ActivePlayers -->
-                    <ListBox Grid.Row="1"
-                            ItemsSource="{Binding AvailableKillers}"
-                            SelectedItem="{Binding SelectedKillerPlayer}"
-                            Style="{StaticResource ListBoxPlayerStyle}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0" Text="{Binding Player.Name}" FontWeight="Bold"/>
-                                    <TextBlock Grid.Column="1" 
-                                              Text="{Binding BountyKills, StringFormat='💀 {0}'}" 
-                                              FontSize="14" 
-                                              FontWeight="Bold"
-                                              Foreground="#e94560"
-                                              Visibility="{Binding BountyKills, Converter={StaticResource ZeroToCollapsedConverter}}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <Button Grid.Row="2"
-                           Content="❌ Aucun killer"
-                           Command="{Binding ClearSelectionCommand}"
-                           Height="40"
-                           Background="#e94560"
-                           Foreground="White"
-                           FontSize="14"
-                           Margin="0,10,0,0"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding PlayersRemaining}" FontSize="38" FontWeight="Bold" Foreground="#00ff88"/>
+                        <TextBlock Text=" joueurs restants" FontSize="16" Foreground="#a0a0a0" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- ACTIONS & HISTORIQUE -->
-            <Border Grid.Column="2" Style="{StaticResource CardStyle}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+            <!-- CONTENU PRINCIPAL -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
 
-                    <!-- TITRE -->
-                    <TextBlock Grid.Row="0" Text="⚡ Actions" Style="{StaticResource TitleStyle}"/>
+                <!-- ZONE PRINCIPALE -->
+                <Border Grid.Column="0" Background="#0f3460" CornerRadius="12" Padding="20" Margin="0,0,16,0"
+                        Effect="{StaticResource CardShadow}">
 
-                    <!-- BOUTON ÉLIMINER -->
-                    <Button Grid.Row="1"
-                           Content="💀 ÉLIMINER LE JOUEUR"
-                           Command="{Binding EliminatePlayerCommand}"
-                           Height="60"
-                           Background="#e94560"
-                           Foreground="White"
-                           FontSize="20"
-                           FontWeight="Bold"
-                           Margin="0,0,0,15"
-                           IsEnabled="{Binding SelectedEliminatedPlayer, Converter={StaticResource NullToBoolConverter}}"/>
+                    <Grid>
+                        <!-- LISTE DES JOUEURS -->
 
-                    <!-- SECTION RECAVE -->
-                    <Border Grid.Row="2" 
-                           Background="#0f3460" 
-                           CornerRadius="10" 
-                           Padding="15"
-                           Margin="0,0,0,15"
-                           Visibility="{Binding ShowRebuySection, Converter={StaticResource BoolToVisibleConverter}}">
-                        <StackPanel>
-                            <TextBlock Text="🔄 RECAVE" 
-                                      FontSize="18" 
-                                      FontWeight="Bold" 
-                                      Foreground="#ffd700"
-                                      Margin="0,0,0,10"/>
+                        <!-- LISTE DES JOUEURS -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+              Visibility="{Binding SelectedEliminatedPlayer, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}"
+              Padding="0,0,8,0">
 
-                            <TextBlock Text="{Binding RebuyMessage}"
-                                      FontSize="14"
-                                      TextWrapping="Wrap"
-                                      Foreground="White"
-                                      Margin="0,0,0,15"/>
+                            <ItemsControl ItemsSource="{Binding ActivePlayers}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <!-- VirtualizingStackPanel avec les attached properties CORRECTES -->
+                                        <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
+                                        VirtualizingPanel.VirtualizationMode="Recycling" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
 
-                            <Button Content="{Binding RebuyAmount, StringFormat='🔄 RECAVER ({0:C})'}"
-                                   Command="{Binding RebuyPlayerCommand}"
-                                   Height="50"
-                                   Background="#00ff88"
-                                   Foreground="#1a1a2e"
-                                   FontSize="18"
-                                   FontWeight="Bold"
-                                   IsEnabled="{Binding CanRebuy}"
-                                   Visibility="{Binding SelectedEliminatedPlayer, Converter={StaticResource NullToBoolConverter}, FallbackValue=Collapsed}"/>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.SelectPlayerCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+        CommandParameter="{Binding}"
+        Margin="0,0,0,12"
+        Padding="0,8"
+        Background="#16213e"
+        BorderThickness="1"
+        BorderBrush="#0f3460"
+        Cursor="Hand"
+        HorizontalContentAlignment="Center">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="PlayerBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Effect="{StaticResource CardShadow}">
+                                                                    <!-- Contenu : nom + kills sur la même ligne -->
+                                                                    <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center">
+                                                                        <!-- Nom du joueur (toujours blanc) -->
+                                                                        <TextBlock Text="{Binding Player.Name}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="White"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,8,0"/>
+                                                                        <!-- espace entre nom et kills -->
 
-                            <TextBlock Text="{Binding RebuyCount, StringFormat='Recaves effectuées : {0}'}"
-                                      FontSize="12"
-                                      Foreground="#a0a0a0"
-                                      Margin="0,10,0,0"
-                                      HorizontalAlignment="Center"
-                                      Visibility="{Binding SelectedEliminatedPlayer, Converter={StaticResource NullToBoolConverter}, FallbackValue=Collapsed}"/>
+                                                                        <!-- Kills avec emojis + couleur dynamique -->
+                                                                        <TextBlock FontSize="20"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center">
+                                                                            <TextBlock.Text>
+                                                                                <Binding Path="BountyKills" Converter="{StaticResource KillCountToEmojiConverter}"/>
+                                                                            </TextBlock.Text>
+                                                                            <TextBlock.Foreground>
+                                                                                <Binding Path="BountyKills" Converter="{StaticResource KillCountToColorConverter}"/>
+                                                                            </TextBlock.Foreground>
+                                                                        </TextBlock>
+                                                                    </StackPanel>
+                                                                </Border>
+
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="PlayerBorder" Property="Background" Value="#1e2a44"/>
+                                                                        <Setter TargetName="PlayerBorder" Property="BorderBrush" Value="#00ff88"/>
+                                                                        <Setter TargetName="PlayerBorder" Property="BorderThickness" Value="2"/>
+                                                                        <Setter Property="Foreground" Value="#00ff88"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsPressed" Value="True">
+                                                                        <Setter TargetName="PlayerBorder" Property="Background" Value="#00cc77"/>
+                                                                        <Setter TargetName="PlayerBorder" Property="BorderBrush" Value="#00ff88"/>
+                                                                        <Setter Property="Foreground" Value="#1a1a2e"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <!-- CONFIRMATION -->
+                        <StackPanel Visibility="{Binding SelectedEliminatedPlayer, Converter={StaticResource NullToVisibilityConverter}}">
+
+                            <!-- JOUEUR ÉLIMINÉ -->
+                            <Border Background="#16213e" CornerRadius="10" Padding="24" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="JOUEUR ÉLIMINÉ" FontSize="14" Foreground="#a0a0a0" Margin="0,0,0,8"/>
+                                    <TextBlock Text="{Binding SelectedEliminatedPlayer.Player.Name}"
+                                               FontSize="32"
+                                               FontWeight="Bold"
+                                               Foreground="#e94560"/>
+                                    <TextBlock Text="{Binding PlayersRemaining, StringFormat='Position finale : #{0}'}"
+                                               FontSize="16"
+                                               Foreground="#ffd700"
+                                               Margin="0,8,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- ÉLIMINÉ PAR (ComboBox amélioré) -->
+                            <Border Background="#16213e" CornerRadius="10" Padding="24" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="ÉLIMINÉ PAR" FontSize="14" Foreground="#a0a0a0" Margin="0,0,0,12"/>
+                                    <ComboBox ItemsSource="{Binding AvailableKillers}"
+                                              SelectedItem="{Binding SelectedKillerPlayer}"
+                                              DisplayMemberPath="Player.Name"
+                                              Style="{StaticResource BeautifulComboBox}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- RECAVE -->
+                            <Border Background="#16213e" CornerRadius="10" Padding="24" Margin="0,0,0,24"
+                                    Visibility="{Binding ShowRebuyOption, Converter={StaticResource BoolToVisibleConverter}}">
+                                <StackPanel>
+                                    <TextBlock Text="RECAVE" FontSize="14" Foreground="#a0a0a0" Margin="0,0,0,12"/>
+                                    <Border CornerRadius="8" Padding="14" Margin="0,0,0,12">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#00ff88"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding CanRebuy}" Value="False">
+                                                        <Setter Property="Background" Value="#e94560"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding RebuyMessage}"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#1a1a2e"
+                                                   TextWrapping="Wrap"/>
+                                    </Border>
+                                    <CheckBox Content="Effectuer la recave immédiatement"
+                                              IsChecked="{Binding WillRebuy}"
+                                              IsEnabled="{Binding CanRebuy}"
+                                              Foreground="White"
+                                              FontSize="15"
+                                              Visibility="{Binding CanRebuy, Converter={StaticResource BoolToVisibleConverter}}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- BOUTONS -->
+                            <UniformGrid Columns="2" Rows="1" HorizontalAlignment="Stretch">
+                                <Button Content="❌ Annuler"
+                                        Command="{Binding CancelSelectionCommand}"
+                                        Height="52"
+                                        Margin="0,0,6,0"
+                                        Background="#2a2a3e"
+                                        Foreground="White"
+                                        FontSize="16"
+                                        BorderThickness="0"
+                                        Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#3a3a4e"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Content="✅ CONFIRMER"
+                                        Command="{Binding EliminatePlayerCommand}"
+                                        Height="52"
+                                        Margin="6,0,0,0"
+                                        Background="#e94560"
+                                        Foreground="White"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        BorderThickness="0"
+                                        Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#d03a4f"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </UniformGrid>
                         </StackPanel>
-                    </Border>
+                    </Grid>
+                </Border>
 
-                    <!-- HISTORIQUE -->
-                    <Border Grid.Row="3" 
-                           Background="#0f3460" 
-                           CornerRadius="10" 
-                           Padding="15">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                <!-- HISTORIQUE -->
+                <Border Grid.Column="1" Background="#0f3460" CornerRadius="12" Padding="20"
+                        Effect="{StaticResource CardShadow}">
+                    <StackPanel>
+                        <TextBlock Text="📋 HISTORIQUE" FontSize="18" FontWeight="Bold" Foreground="#00ff88" Margin="0,0,0,16"/>
 
-                            <TextBlock Grid.Row="0" 
-                                      Text="📜 Historique (dernières éliminations)" 
-                                      FontSize="14" 
-                                      FontWeight="Bold"
-                                      Foreground="#a0a0a0"
-                                      Margin="0,0,0,10"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding EliminationHistory}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#16213e" CornerRadius="8" Padding="14" Margin="0,0,0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
 
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding EliminationHistory}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="#1a1a2e" 
-                                                   CornerRadius="8" 
-                                                   Padding="10" 
-                                                   Margin="0,5">
-                                                <Grid>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                    </Grid.RowDefinitions>
+                                                <Border Grid.Column="0" Background="#00ff88" CornerRadius="6" Width="32" Height="32" Margin="0,0,12,0">
+                                                    <TextBlock Text="{Binding Position}"
+                                                               FontSize="14"
+                                                               FontWeight="Bold"
+                                                               Foreground="#1a1a2e"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
 
-                                                    <StackPanel Grid.Row="0" Orientation="Horizontal">
-                                                        <TextBlock Text="{Binding Position, StringFormat='#{0}'}" 
-                                                                  FontWeight="Bold" 
-                                                                  Foreground="#ffd700"
-                                                                  FontSize="14"
-                                                                  Margin="0,0,10,0"/>
-                                                        <TextBlock Text="{Binding PlayerName}" 
-                                                                  FontWeight="Bold"
-                                                                  Foreground="White"
-                                                                  FontSize="14"/>
-                                                    </StackPanel>
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock Text="{Binding PlayerName}"
+                                                               FontSize="15"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="White"/>
+                                                    <TextBlock FontSize="13" Foreground="#a0a0a0" Margin="0,2,0,0">
+                                                        <Run Text="par "/>
+                                                        <Run Text="{Binding KillerName}" Foreground="#00ff88"/>
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding ActionType}"
+                                                               FontSize="12"
+                                                               Foreground="#ffd700"
+                                                               Visibility="{Binding IsRebuy, Converter={StaticResource BoolToVisibleConverter}}"
+                                                               Margin="0,4,0,0"/>
+                                                </StackPanel>
 
-                                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,5,0,0">
-                                                        <TextBlock Text="🎯 " 
-                                                                  FontSize="11" 
-                                                                  Foreground="#a0a0a0"/>
-                                                        <TextBlock Text="{Binding KillerName}" 
-                                                                  FontSize="11" 
-                                                                  Foreground="#a0a0a0"
-                                                                  Margin="0,0,10,0"/>
-                                                        <TextBlock Text="⏰ " 
-                                                                  FontSize="11" 
-                                                                  Foreground="#a0a0a0"/>
-                                                        <TextBlock Text="{Binding TimeFormatted}" 
-                                                                  FontSize="11" 
-                                                                  Foreground="#a0a0a0"/>
-                                                    </StackPanel>
-                                                </Grid>
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding TimeDisplay}"
+                                                           FontSize="12"
+                                                           Foreground="#666666"
+                                                           VerticalAlignment="Center"
+                                                           Margin="12,0,0,0"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- FOOTER -->
+            <Border Grid.Row="2" Background="#0f3460" CornerRadius="12" Padding="20" Margin="0,20,0,0">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Éliminés : " FontSize="14" Foreground="#a0a0a0"/>
+                        <TextBlock Text="{Binding TotalEliminations}" FontSize="18" FontWeight="Bold" Foreground="#e94560" Margin="6,0,0,0"/>
+
+                        <!-- BOUTON ANNULER DERNIÈRE ÉLIMINATION -->
+                        <Button Content="↶ Annuler dernière"
+                    Command="{Binding UndoLastEliminationCommand}"
+                    Height="44"
+                    Padding="20,0"
+                    Margin="30,0,0,0"
+                    Background="#ffd700"
+                    Foreground="#1a1a2e"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    BorderThickness="0"
+                    Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding TotalEliminations, Converter={StaticResource IntGreaterThanZeroConverter}}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#ffed4e"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="#e6c200"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+
+                    <Button Content="❌ Fermer"
+                Click="Close_Click"
+                HorizontalAlignment="Right"
+                Height="44"
+                Padding="32,0"
+                Background="#2a2a3e"
+                Foreground="White"
+                FontSize="15"
+                BorderThickness="0"
+                Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-
-                            <Button Grid.Row="2"
-                                   Content="⏪ ANNULER DERNIÈRE ÉLIMINATION"
-                                   Command="{Binding UndoLastEliminationCommand}"
-                                   Height="40"
-                                   Background="#16213e"
-                                   Foreground="White"
-                                   FontSize="13"
-                                   Margin="0,10,0,0"
-                                   ToolTip="Annule l'élimination et retire le kill au killer"/>
-                        </Grid>
-                    </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#3a3a4e"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </Grid>
             </Border>
         </Grid>
-
-        <!-- SECTION FIN DE TOURNOI -->
-        <Border Grid.Row="1" 
-               Background="#1a1a2e" 
-               Visibility="{Binding IsTournamentFinished, Converter={StaticResource BoolToVisibleConverter}}"
-               VerticalAlignment="Center"
-               HorizontalAlignment="Center"
-               CornerRadius="20"
-               Padding="50">
-            <StackPanel HorizontalAlignment="Center">
-                <TextBlock Text="🏆 TOURNOI TERMINÉ ! 🏆" 
-                          FontSize="48" 
-                          FontWeight="Bold" 
-                          Foreground="#ffd700"
-                          HorizontalAlignment="Center"/>
-                <TextBlock Text="Vainqueur" 
-                          FontSize="24" 
-                          Foreground="#a0a0a0"
-                          HorizontalAlignment="Center"
-                          Margin="0,30,0,10"/>
-                <TextBlock Text="{Binding WinnerName}" 
-                          FontSize="42" 
-                          FontWeight="Bold" 
-                          Foreground="#00ff88"
-                          HorizontalAlignment="Center"/>
-            </StackPanel>
-        </Border>
-
-        <!-- BOUTON FERMER -->
-        <Button Grid.Row="2"
-               Content="✅ FERMER"
-               Click="Close_Click"
-               Height="50"
-               Background="#0f3460"
-               Foreground="White"
-               FontSize="18"
-               FontWeight="Bold"
-               Margin="10,10,10,0"/>
-    </Grid>
+    </Border>
 </Window>

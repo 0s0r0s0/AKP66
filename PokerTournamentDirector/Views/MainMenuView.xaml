@@ -201,7 +201,17 @@
                 </StackPanel>
 
                 <!-- TROISIÈME LIGNE : Paramètres -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Cursor="">
+
+                    <Button Content="CHAMPIONNAT" 
+                            Tag="🏆"
+                            Background="#16213e" 
+                            Foreground="White"
+                            Click="Championship_Click"
+                            Style="{StaticResource MenuButtonStyle}" Cursor="Hand"/>
+
+                    
+                    
                     <Button Content="PARAMÈTRES" 
                            Tag="⚙️"
                            Style="{StaticResource MenuButtonStyle}"
@@ -209,40 +219,48 @@
                            Foreground="White"
                            Click="Settings_Click"/>
 
-                    <Button Content="HISTORIQUE" 
-                           Tag="📜"
-                           Style="{StaticResource MenuButtonStyle}"
-                           Background="#16213e" 
-                           Foreground="White"
-                           IsEnabled="False"
-                           ToolTip="Bientôt disponible"/>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
 
         <!-- FOOTER -->
-        <Border Grid.Row="2" Background="#0f3460" Padding="15">
-            <Grid>
-                <TextBlock Text="Version 1.0.0" 
-                          FontSize="12" 
-                          Foreground="#666"
-                          HorizontalAlignment="Left"
-                          VerticalAlignment="Center"/>
-                
-                <TextBlock Text="Créez vos joueurs et structures de blinds avant de lancer un tournoi" 
-                          FontSize="13" 
-                          Foreground="#a0a0a0"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"/>
-
-                <Button Content="Quitter" 
-                       Click="Quit_Click"
-                       HorizontalAlignment="Right"
-                       Width="100" Height="35"
-                       Background="#e94560"
-                       Foreground="White"
-                       FontSize="14"/>
-            </Grid>
-        </Border>
+<Border Grid.Row="2" Background="#0f3460" Padding="15">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        
+        <!-- Version à gauche -->
+        <TextBlock Grid.Column="0"
+                  Text="Version 2.0.1" 
+                  FontSize="12" 
+                  Foreground="#666"
+                  VerticalAlignment="Center"/>
+        
+        <!-- Logo + Message au centre -->
+        <StackPanel Grid.Column="1"
+                   Orientation="Horizontal"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center">
+            
+            <TextBlock Text="Créez vos joueurs et structures de blinds avant de lancer un tournoi" 
+                      FontSize="13" 
+                      Foreground="#a0a0a0"
+                      VerticalAlignment="Center"/>
+        </StackPanel>
+        
+        <!-- Bouton à droite -->
+        <Button Grid.Column="2"
+               Content="Quitter" 
+               Click="Quit_Click"
+               HorizontalAlignment="Right"
+               Width="100" Height="35"
+               Background="#e94560"
+               Foreground="White"
+               FontSize="14"/>
+    </Grid>
+</Border>
     </Grid>
 </Window>

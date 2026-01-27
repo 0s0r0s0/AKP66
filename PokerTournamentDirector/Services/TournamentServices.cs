@@ -116,10 +116,20 @@ namespace PokerTournamentDirector.Services
 
             tournamentPlayer.IsEliminated = true;
             tournamentPlayer.EliminationTime = DateTime.Now;
-            tournamentPlayer.FinishPosition = activePlayers.Count; // Position = nombre de joueurs restants
+            tournamentPlayer.FinishPosition = activePlayers.Count;
             tournamentPlayer.EliminatedByPlayerId = eliminatedByPlayerId;
 
-            // Si c'est un bounty killer, on incrémente
+            // AJOUTER : Si c'est le dernier joueur (il reste 1 actif après élimination)
+            if (activePlayers.Count == 2) // 2 actifs avant élimination = 1 après
+            {
+                var winner = activePlayers.FirstOrDefault(p => p.Id != tournamentPlayerId);
+                if (winner != null)
+                {
+                    winner.FinishPosition = 1;
+                    winner.IsEliminated = false; // Garder actif pour affichage
+                }
+            }
+
             if (eliminatedByPlayerId.HasValue)
             {
                 var killer = await _context.TournamentPlayers.FindAsync(eliminatedByPlayerId.Value);

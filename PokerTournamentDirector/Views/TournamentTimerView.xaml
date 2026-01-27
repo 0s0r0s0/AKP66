@@ -27,6 +27,13 @@
             <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
 
+        <Style x:Key="MediumAlternatNumberStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="48"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
         <Style x:Key="LabelStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="32"/>
             <Setter Property="Foreground" Value="#a0a0a0"/>
@@ -70,7 +77,7 @@
 
         <!-- Style pour le timer avec triggers -->
         <Style x:Key="TimerStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="180"/>
+            <Setter Property="FontSize" Value="270"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="#00ff88"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -104,13 +111,26 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Nom du tournoi -->
-                <TextBlock Grid.Column="0" 
-                          Text="{Binding TournamentName}" 
-                          Style="{StaticResource HeaderStyle}"
-                          FontSize="36"
-                          HorizontalAlignment="Left"
-                          VerticalAlignment="Center"/>
+                <!-- Nom du tournoi + Badge championnat -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding TournamentName}" 
+                               Style="{StaticResource HeaderStyle}"
+                               FontSize="36"
+                               VerticalAlignment="Center"/>
+
+                    <!-- Badge Championnat -->
+                    <Border Background="#00ff88"
+                            CornerRadius="8"
+                            Padding="8,4"
+                            Margin="15,0,0,0"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding IsChampionshipMatch, Converter={StaticResource BoolToVisibleConverter}}">
+                        <TextBlock Text="🏆 CHAMPIONNAT"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   Foreground="#1a1a2e"/>
+                    </Border>
+                </StackPanel>
 
                 <!-- Horloge et durée -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -122,11 +142,11 @@
 
                 <!-- Raccourcis clavier -->
                 <TextBlock Grid.Column="2"
-                          Text="[ESC] Quitter | [ESPACE] Pause | [→] Next | [E] Élim. | [B] Blinds | [P] Joueurs" 
-                          FontSize="14" 
-                          Foreground="#a0a0a0"
-                          HorizontalAlignment="Right" 
-                          VerticalAlignment="Center"/>
+                           Text="[S] Start/Pause | [E] Élim. | [P] Joueurs | [B] Blinds | [→] Next | [←] Précédent | [ESC] Quitter" 
+                           FontSize="14" 
+                           Foreground="#a0a0a0"
+                           HorizontalAlignment="Right" 
+                           VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
@@ -143,176 +163,280 @@
                 <StackPanel>
                     <TextBlock Text="BLINDS ACTUELLES" Style="{StaticResource LabelStyle}"/>
                     <TextBlock Text="{Binding SmallBlind, StringFormat='{}{0:N0}'}" 
-                              Style="{StaticResource MediumNumberStyle}"
-                              Foreground="#ffd700"/>
+                               Style="{StaticResource MediumNumberStyle}"
+                               Foreground="#ffd700"/>
                     <TextBlock Text="/" FontSize="48" Foreground="White" HorizontalAlignment="Center" Margin="0,5"/>
                     <TextBlock Text="{Binding BigBlind, StringFormat='{}{0:N0}'}" 
-                              Style="{StaticResource MediumNumberStyle}"
-                              Foreground="#ffd700"/>
+                               Style="{StaticResource MediumNumberStyle}"
+                               Foreground="#ffd700"/>
 
                     <TextBlock Text="{Binding Ante, StringFormat='Ante: {0:N0}'}" 
-                              FontSize="36" 
-                              Foreground="#ff6b6b"
-                              HorizontalAlignment="Center"
-                              Margin="0,20,0,0"
-                              Visibility="{Binding Ante, Converter={StaticResource ZeroToCollapsedConverter}}"/>
+                               FontSize="36" 
+                               Foreground="#ff6b6b"
+                               HorizontalAlignment="Center"
+                               Margin="0,20,0,0"
+                               Visibility="{Binding Ante, Converter={StaticResource ZeroToCollapsedConverter}}"/>
 
                     <!-- Bouton éditer blinds -->
                     <Button Content="✏️ Modifier" 
-                           Click="EditBlinds_Click"
-                           Height="35"
-                           Background="#0f3460"
-                           Foreground="White"
-                           FontSize="14"
-                           BorderThickness="0"
-                           Margin="0,20,0,0"
-                           Cursor="Hand"/>
+                            Click="EditBlinds_Click"
+                            Height="35"
+                            Background="#0f3460"
+                            Foreground="White"
+                            FontSize="14"
+                            BorderThickness="0"
+                            Margin="0,20,0,0"
+                            Cursor="Hand"/>
                 </StackPanel>
             </Border>
 
             <!-- TIMER CENTRAL -->
             <Border Grid.Column="1" Style="{StaticResource InfoCardStyle}">
                 <Grid>
-                    <!-- Mode normal (non pause structurée et non terminé) -->
-                    <StackPanel>
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsBreak}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsTournamentFinished}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        
-                        <TextBlock Text="{Binding CurrentLevel, StringFormat='NIVEAU {0}'}" 
-                                  Style="{StaticResource LabelStyle}"
-                                  FontSize="40"/>
+                    <!-- Mode TOURNOI EN COURS -->
+                    <StackPanel Visibility="{Binding IsTournamentFinished, Converter={StaticResource BoolToCollapsedConverter}}">
+                        <TextBlock Text="{Binding CurrentLevelName}" 
+                       FontSize="42" 
+                       FontWeight="Bold"
+                       Foreground="#00ff88"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,20"/>
 
                         <TextBlock Text="{Binding TimeRemaining}" 
-                                  Style="{StaticResource TimerStyle}"
-                                  Margin="0,20">
-                            <TextBlock.Effect>
-                                <DropShadowEffect Color="#00ff88" BlurRadius="30" ShadowDepth="0"/>
-                            </TextBlock.Effect>
-                        </TextBlock>
+                       Style="{StaticResource TimerStyle}"/>
 
-                        <!-- Indicateur PAUSE -->
-                        <TextBlock Text="⏸ EN PAUSE" 
-                                  FontSize="32" 
-                                  FontWeight="Bold"
-                                  Foreground="#ffd700"
-                                  HorizontalAlignment="Center"
-                                  Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibleConverter}}"/>
+                        <TextBlock Text="⏸ PAUSE" 
+                       FontSize="42"
+                       FontWeight="Bold"
+                       Foreground="#ffd700"
+                       HorizontalAlignment="Center"
+                       Margin="0,20,0,0"
+                       Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibleConverter}}"/>
 
-                        <ProgressBar Value="{Binding TotalSecondsRemaining}" 
-                                    Maximum="{Binding ProgressBarMaximum}"
-                                    Height="20"
-                                    Margin="40,20,40,0"
-                                    Background="#2a2a3e"
-                                    Foreground="#00ff88"
-                                    BorderThickness="0"/>
-
-                        <!-- Temps avant prochaine pause -->
-                        <TextBlock HorizontalAlignment="Center" Margin="0,15,0,0">
-                            <Run Text="Prochaine pause dans : " FontSize="18" Foreground="#a0a0a0"/>
-                            <Run Text="{Binding TimeToNextBreak}" FontSize="22" FontWeight="Bold" Foreground="#ffd700"/>
-                        </TextBlock>
-                    </StackPanel>
-
-                    <!-- Mode PAUSE STRUCTURÉE (Break) - caché si tournoi terminé -->
-                    <StackPanel VerticalAlignment="Center">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding IsBreak}" Value="True"/>
-                                            <Condition Binding="{Binding IsTournamentFinished}" Value="False"/>
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </MultiDataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        <TextBlock Text="☕ PAUSE" 
-                                  Style="{StaticResource BigNumberStyle}"
-                                  FontSize="100"
-                                  Foreground="#ff6b6b"/>
-                        <TextBlock Text="{Binding BreakName}" 
-                                  Style="{StaticResource MediumNumberStyle}"
-                                  FontSize="48"
-                                  Margin="0,20"/>
-                        <TextBlock Text="{Binding TimeRemaining}" 
-                                  Style="{StaticResource MediumNumberStyle}"
-                                  Foreground="#ffd700"
-                                  FontSize="80"
-                                  Margin="0,20"/>
                     </StackPanel>
 
                     <!-- Mode TOURNOI TERMINÉ -->
+                    <!-- Canvas pour les confettis (doit être au-dessus ou en arrière-plan) -->
+                    <!-- Canvas pour les confettis - DOIT COUVRIR TOUTE LA FENÊTRE -->
+                    <Canvas x:Name="ConfettiCanvas" 
+        Grid.RowSpan="3" Grid.ColumnSpan="3"
+        ClipToBounds="False"
+        IsHitTestVisible="False"
+        Visibility="{Binding IsTournamentFinished, Converter={StaticResource BoolToVisibleConverter}}"
+        Panel.ZIndex="9999"/>
+
+                    <!-- Le panneau du vainqueur avec trophées animés -->
                     <StackPanel Visibility="{Binding IsTournamentFinished, Converter={StaticResource BoolToVisibleConverter}}"
-                               VerticalAlignment="Center">
-                        <TextBlock Text="🏆 TOURNOI TERMINÉ 🏆" 
-                                  Style="{StaticResource BigNumberStyle}"
-                                  FontSize="80"
-                                  Foreground="#ffd700"/>
-                        <TextBlock Text="Vainqueur" 
-                                  FontSize="32"
-                                  Foreground="#a0a0a0"
-                                  HorizontalAlignment="Center"
-                                  Margin="0,30,0,10"/>
-                        <TextBlock Text="{Binding WinnerName}" 
-                                  Style="{StaticResource MediumNumberStyle}"
-                                  FontSize="64"
-                                  Foreground="#00ff88"/>
-                        <TextBlock Text="{Binding PrizePool, StringFormat='Prize Pool: {0:C}'}" 
-                                  FontSize="36"
-                                  Foreground="#ffd700"
-                                  HorizontalAlignment="Center"
-                                  Margin="0,20,0,0"/>
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center"
+            Panel.ZIndex="10000"
+            Margin="0,50,0,0">
+
+                        <!-- Coupe centrale avec effet magique (glow qui pulse + éclat tournant) -->
+                        <TextBlock Text="🏆"
+           FontSize="160"
+           Foreground="#ffd700"
+           VerticalAlignment="Center"
+           HorizontalAlignment="Center">
+
+    <!-- Glow magique -->
+                            <TextBlock.Effect>
+                                <DropShadowEffect x:Name="TrophyGlow"
+                          Color="#FFFFA0"
+                          Direction="0"
+                          ShadowDepth="0"
+                          BlurRadius="60"
+                          Opacity="0.3"/>
+                            </TextBlock.Effect>
+
+    <!-- Le style qui déclenche l'animation -->
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsTournamentFinished}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard RepeatBehavior="Forever">
+
+                                                        <!-- Glow qui pulse (BlurRadius + Opacity) -->
+                                                        <DoubleAnimation Storyboard.TargetProperty="(TextBlock.Effect).(DropShadowEffect.BlurRadius)"
+                                                 From="60" To="100"
+                                                 Duration="0:0:3"
+                                                 AutoReverse="True"
+                                                 EasingFunction="{StaticResource SineEaseInOut}"/>
+
+                                                        <DoubleAnimation Storyboard.TargetProperty="(TextBlock.Effect).(DropShadowEffect.Opacity)"
+                                                 From="0.3" To="0.8"
+                                                 Duration="0:0:2.5"
+                                                 AutoReverse="True"
+                                                 EasingFunction="{StaticResource SineEaseInOut}"/>
+
+                                                        <!-- Petit éclat tournant (direction du glow qui tourne) -->
+                                                        <DoubleAnimation Storyboard.TargetProperty="(TextBlock.Effect).(DropShadowEffect.Direction)"
+                                                 From="0" To="360"
+                                                 Duration="0:0:8"
+                                                 RepeatBehavior="Forever"/>
+
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Reste du contenu (Vainqueur + nom) -->
+                        <TextBlock Text="Vainqueur"
+               FontSize="36"
+               Foreground="#a0a0a0"
+               HorizontalAlignment="Center"
+               Margin="0,30,0,10"/>
+
+                        <!-- Nom du gagnant avec animation festive -->
+                        <TextBlock x:Name="WinnerNameText"
+               Text="{Binding WinnerName}"
+               FontSize="90"
+               Foreground="#00ff88"
+               FontWeight="Bold"
+               HorizontalAlignment="Center"
+               Margin="0,20,0,0">
+
+    <!-- Effet glow doré -->
+                            <TextBlock.Effect>
+                                <DropShadowEffect x:Name="GlowEffect"
+                          Color="Gold"
+                          Direction="0"
+                          ShadowDepth="0"
+                          BlurRadius="50"
+                          Opacity="0"/>
+                            </TextBlock.Effect>
+
+    <!-- Transformation pour la pulsation -->
+                            <TextBlock.RenderTransform>
+                                <ScaleTransform x:Name="ScaleTransform" 
+                        ScaleX="1" ScaleY="1" 
+                        CenterX="0.5" CenterY="0.5"/>
+                            </TextBlock.RenderTransform>
+
+    <!-- LE SEUL STYLE : hérite de MediumNumberStyle + triggers -->
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource MediumNumberStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsTournamentFinished}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard x:Name="VictoryAnimationStoryboard">
+                                                    <Storyboard RepeatBehavior="3x">
+                                                        <!-- Pulsation élégante : on cible depuis le TextBlock -->
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                 From="1.0" To="1.18"
+                                                 Duration="0:0:1.4"
+                                                 AutoReverse="True"
+                                                 EasingFunction="{StaticResource QuadraticEaseInOut}"/>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                 From="1.0" To="1.18"
+                                                 Duration="0:0:1.4"
+                                                 AutoReverse="True"
+                                                 EasingFunction="{StaticResource QuadraticEaseInOut}"/>
+
+                                                        <!-- Glow qui pulse -->
+                                                        <DoubleAnimation Storyboard.TargetProperty="(TextBlock.Effect).(DropShadowEffect.Opacity)"
+                                                 From="0.0" To="0.95"
+                                                 Duration="0:0:1.4"
+                                                 AutoReverse="True"
+                                                 EasingFunction="{StaticResource QuadraticEaseInOut}"/>
+
+                                                        <ColorAnimation Storyboard.TargetProperty="(TextBlock.Effect).(DropShadowEffect.Color)"
+                                                From="Gold" To="#FFFFB0"
+                                                Duration="0:0:1.4"
+                                                AutoReverse="True"
+                                                EasingFunction="{StaticResource QuadraticEaseInOut}"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <TextBlock Text="{Binding PrizePool, StringFormat='Prize Pool: {0:C}'}"
+               FontSize="36"
+               Foreground="#ffd700"
+               HorizontalAlignment="Center"
+               Margin="0,40,0,0"
+               Visibility="{Binding PrizePool, Converter={StaticResource ZeroToCollapsedConverter}}"/>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!-- NEXT BLINDS -->
+            <!-- BLINDS SUIVANTES -->
             <Border Grid.Column="2" Style="{StaticResource InfoCardStyle}">
                 <StackPanel>
-                    <TextBlock Text="PROCHAINES BLINDS" Style="{StaticResource LabelStyle}"/>
+                    <TextBlock Text="BLINDS SUIVANTES" Style="{StaticResource LabelStyle}"/>
                     <TextBlock Text="{Binding NextSmallBlind, StringFormat='{}{0:N0}'}" 
-                              Style="{StaticResource MediumNumberStyle}"
-                              Foreground="#a0a0a0"/>
-                    <TextBlock Text="/" FontSize="48" Foreground="#a0a0a0" HorizontalAlignment="Center" Margin="0,5"/>
+                               Style="{StaticResource MediumAlternatNumberStyle}"
+                               Opacity="0.6"/>
+                    <TextBlock Text="/" FontSize="24" Foreground="White" HorizontalAlignment="Center" Opacity="0.6" Margin="0,5"/>
                     <TextBlock Text="{Binding NextBigBlind, StringFormat='{}{0:N0}'}" 
-                              Style="{StaticResource MediumNumberStyle}"
-                              Foreground="#a0a0a0"/>
+                               Style="{StaticResource MediumAlternatNumberStyle}"
+                               Opacity="0.6"/>
 
                     <TextBlock Text="{Binding NextAnte, StringFormat='Ante: {0:N0}'}" 
-                              FontSize="36" 
-                              Foreground="#ff6b6b"
-                              Opacity="0.6"
-                              HorizontalAlignment="Center"
-                              Margin="0,20,0,0"
-                              Visibility="{Binding NextAnte, Converter={StaticResource ZeroToCollapsedConverter}}"/>
+                               FontSize="36" 
+                               Foreground="#ff6b6b"
+                               Opacity="0.6"
+                               HorizontalAlignment="Center"
+                               Margin="0,20,0,0"
+                               Visibility="{Binding NextAnte, Converter={StaticResource ZeroToCollapsedConverter}}"/>
 
-                    <!-- Indicateur Late Registration -->
-                    <Border Background="#16213e" CornerRadius="10" Padding="10" Margin="0,20,0,0"
-                           Visibility="{Binding CanAddLatePlayers, Converter={StaticResource BoolToVisibleConverter}}">
-                        <TextBlock Text="📝 Inscriptions ouvertes" 
-                                  FontSize="16" 
-                                  Foreground="#00ff88"
-                                  HorizontalAlignment="Center"/>
-                    </Border>
+                    <!-- Indicateurs Late Registration et Rebuys -->
+                    <StackPanel Margin="0,20,0,0">
+                        <!-- Inscriptions ouvertes -->
+                        <Border Background="#16213e" 
+                                CornerRadius="10" 
+                                Padding="10" 
+                                Margin="0,0,0,8"
+                                Visibility="{Binding CanAddLatePlayers, Converter={StaticResource BoolToVisibleConverter}}">
+                            <TextBlock Text="📝 Inscriptions ouvertes" 
+                                       FontSize="16" 
+                                       Foreground="#00ff88"
+                                       HorizontalAlignment="Center"/>
+                        </Border>
+
+                        <!-- Recaves ouvertes -->
+                        <Border Background="#16213e" 
+                                CornerRadius="10" 
+                                Padding="10"
+                                Margin="0,0,0,8"
+                                Visibility="{Binding CanRebuy, Converter={StaticResource BoolToVisibleConverter}}">
+                            <TextBlock FontSize="16" 
+                                       Foreground="#ffd700"
+                                       HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="💰 Recaves ouvertes"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsLastRebuyLevel}" Value="True">
+                                                <Setter Property="Text" Value="⚠️ DERNIER TOUR DE RECAVE"/>
+                                                <Setter Property="FontWeight" Value="Bold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+
+                    <TextBlock HorizontalAlignment="Center" Margin="0,15,0,0">
+                <Run Text="Prochaine pause dans : " FontSize="18" Foreground="#a0a0a0"/>
+                <Run Text="{Binding TimeToNextBreak}" FontSize="32" FontWeight="Bold" Foreground="#ffd700"/>
+                    </TextBlock>
                 </StackPanel>
             </Border>
         </Grid>
 
-        <!-- STATS BAR (Complète) -->
+        <!-- STATS BAR -->
         <Border Grid.Row="2" Background="#0f3460" Padding="20,10">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -354,110 +478,170 @@
                     <TextBlock Text="{Binding TotalChips, StringFormat='{}{0:N0}'}" Style="{StaticResource StatValueStyle}" Foreground="White" FontSize="36"/>
                 </StackPanel>
 
-                <!-- Prize Pool -->
-                <StackPanel Grid.Column="5" Style="{StaticResource StatStyle}">
+                <!-- Prize Pool (masqué si 0) -->
+                <StackPanel Grid.Column="5" 
+                            Style="{StaticResource StatStyle}"
+                            Visibility="{Binding PrizePool, Converter={StaticResource ZeroToCollapsedConverter}}">
                     <TextBlock Text="PRIZE POOL" Style="{StaticResource StatLabelStyle}"/>
                     <TextBlock Text="{Binding PrizePool, StringFormat='{}{0:N0} €'}" Style="{StaticResource StatValueStyle}" Foreground="#ffd700"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- CONTROLS -->
+        <!-- CONTROLS RÉORGANISÉS -->
         <Border Grid.Row="3" Background="#1a1a2e" Padding="20,10">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Content="◄ Level Précédent" 
-                       Command="{Binding PreviousLevelCommand}"
-                       Width="180" Height="50"
-                       Background="#e94560" 
-                       Foreground="White"
-                       FontSize="16"
-                       FontWeight="SemiBold"
-                       BorderThickness="0"
-                       Margin="5,0"
-                       Cursor="Hand"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <!-- Gauche: Navigation niveaux -->
+                    <ColumnDefinition Width="2*"/>
+                    <!-- Centre: Actions principales / Bouton Fermer -->
+                    <ColumnDefinition Width="*"/>
+                    <!-- Droite: Éliminations/Joueurs/Tables -->
+                </Grid.ColumnDefinitions>
 
-                <Button Content="Level Suivant ►" 
-                       Command="{Binding NextLevelCommand}"
-                       Width="180" Height="50"
-                       Background="#0f3460" 
-                       Foreground="White"
-                       FontSize="16"
-                       FontWeight="SemiBold"
-                       BorderThickness="0"
-                       Margin="5,0"
-                       Cursor="Hand"/>
+                <!-- GAUCHE: Navigation niveaux (discrets) -->
+                <StackPanel Grid.Column="0" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                            Visibility="{Binding IsTournamentFinished, Converter={StaticResource BoolToCollapsedConverter}}">
+                    <Button Content="◄ Niveau précédent" 
+                    Command="{Binding PreviousLevelCommand}"
+                    Width="120" 
+                    Height="40"
+                    Background="#2a2a3e" 
+                    Foreground="#a0a0a0"
+                    FontSize="13"
+                    BorderThickness="1"
+                    BorderBrush="#0f3460"
+                    Margin="0,0,8,0"
+                    Cursor="Hand"/>
 
-                <Button Content="▶ DÉMARRER" 
-                       Command="{Binding StartTournamentCommand}"
-                       Visibility="{Binding IsRunning, Converter={StaticResource BoolToCollapsedConverter}}"
-                       Width="200" Height="50"
-                       Background="#00ff88" 
-                       Foreground="#1a1a2e"
-                       FontSize="20"
-                       FontWeight="Bold"
-                       BorderThickness="0"
-                       Margin="5,0"
-                       Cursor="Hand"/>
+                    <Button Content="Niveau suivant ►" 
+                    Command="{Binding NextLevelCommand}"
+                    Width="120" 
+                    Height="40"
+                    Background="#2a2a3e" 
+                    Foreground="#a0a0a0"
+                    FontSize="13"
+                    BorderThickness="1"
+                    BorderBrush="#0f3460"
+                    Cursor="Hand"/>
+                </StackPanel>
 
-                <Button Content="⏸ PAUSE" 
-                       Command="{Binding PauseTournamentCommand}"
-                       Visibility="{Binding IsPaused, Converter={StaticResource BoolToCollapsedConverter}}"
-                       Width="180" Height="50"
-                       Background="#ffd700" 
-                       Foreground="#1a1a2e"
-                       FontSize="18"
-                       FontWeight="Bold"
-                       BorderThickness="0"
-                       Margin="5,0"
-                       Cursor="Hand"/>
+                <!-- CENTRE: Actions principales OU Bouton Fermer -->
+                <Grid Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!-- Actions principales (visible quand tournoi NON terminé) -->
+                    <StackPanel Orientation="Horizontal" 
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Visibility="{Binding IsTournamentFinished, Converter={StaticResource BoolToCollapsedConverter}}">
+                        <Button Content="▶ DÉMARRER" 
+                        Command="{Binding StartTournamentCommand}"
+                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToCollapsedConverter}}"
+                        Width="200" 
+                        Height="50"
+                        Background="#00ff88" 
+                        Foreground="#1a1a2e"
+                        FontSize="20"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Margin="5,0"
+                        Cursor="Hand"/>
 
-                <Button Content="▶ REPRENDRE" 
-                       Command="{Binding ResumeTournamentCommand}"
-                       Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibleConverter}}"
-                       Width="180" Height="50"
-                       Background="#00ff88" 
-                       Foreground="#1a1a2e"
-                       FontSize="18"
-                       FontWeight="Bold"
-                       BorderThickness="0"
-                       Margin="5,0"
-                       Cursor="Hand"/>
+                        <Button Content="⏸ PAUSE" 
+                        Command="{Binding PauseTournamentCommand}"
+                        Visibility="{Binding IsPaused, Converter={StaticResource BoolToCollapsedConverter}}"
+                        Width="180" 
+                        Height="50"
+                        Background="#ffd700" 
+                        Foreground="#1a1a2e"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Margin="5,0"
+                        Cursor="Hand"/>
 
+                        <Button Content="▶ REPRENDRE" 
+                        Command="{Binding ResumeTournamentCommand}"
+                        Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibleConverter}}"
+                        Width="180" 
+                        Height="50"
+                        Background="#00ff88" 
+                        Foreground="#1a1a2e"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Margin="5,0"
+                        Cursor="Hand"/>
+                    </StackPanel>
 
-                <Button Content="💀 ÉLIMINATIONS" 
-                       Click="Eliminations_Click"
-                       Width="180" Height="50"
-                       Background="#e94560" 
-                       Foreground="White"
-                       FontSize="16"
-                       FontWeight="Bold"
-                       BorderThickness="0"
-                       Margin="5,0"
-                       Cursor="Hand"/>
+                    <!-- Bouton Fermer (visible UNIQUEMENT quand tournoi terminé) -->
+                    <Button Content="🚪 FERMER"
+                    Click="CloseWindow_Click"
+                    Visibility="{Binding IsTournamentFinished, Converter={StaticResource BoolToVisibleConverter}}"
+                    Width="250"
+                    Height="55"
+                    Background="#e94560"
+                    Foreground="White"
+                    FontSize="20"
+                    FontWeight="Bold"
+                    BorderThickness="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Cursor="Hand"
+                    Margin="5,0">
+                        <Button.Effect>
+                            <DropShadowEffect Color="#e94560" BlurRadius="15" ShadowDepth="0" Opacity="0.7"/>
+                        </Button.Effect>
+                    </Button>
+                </Grid>
 
-                <Button Content="👥 JOUEURS" 
-                       Click="Players_Click"
-                       Width="150" Height="50"
-                       Background="#0f3460" 
-                       Foreground="White"
-                       FontSize="16"
-                       FontWeight="SemiBold"
-                       BorderThickness="0"
-                       Margin="5,0"
-                       Cursor="Hand"
-                       Visibility="{Binding CanAddLatePlayers, Converter={StaticResource BoolToVisibleConverter}}"/>
+                <!-- DROITE: Éliminations / Joueurs / Tables -->
+                <StackPanel Grid.Column="2" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                            Visibility="{Binding IsTournamentFinished, Converter={StaticResource BoolToCollapsedConverter}}">
+                    <Button Content="💀 ÉLIMINATIONS" 
+                    Click="Eliminations_Click"
+                    Width="150" 
+                    Height="50"
+                    Background="#e94560" 
+                    Foreground="White"
+                    FontSize="16"
+                    FontWeight="Bold"
+                    BorderThickness="0"
+                    Margin="5,0"
+                    Cursor="Hand"/>
 
-                <Button Content="🎱​ TABLES" 
-                       Click="Settings_Click"
-                       Width="150" Height="50"
-                       Background="#0f3460" 
-                       Foreground="White"
-                       FontSize="16"
-                        FontWeight="SemiBold"
-                       BorderThickness="0"
-                       Margin="5,0"
-                       Cursor="Hand"/>
-            </StackPanel>
+                    <Button Content="👥 JOUEURS" 
+                    Click="Players_Click"
+                    Width="145" 
+                    Height="50"
+                    Background="#0f3460" 
+                    Foreground="White"
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    BorderThickness="0"
+                    Margin="5,0"
+                    Cursor="Hand"
+                    Visibility="{Binding CanAddLatePlayers, Converter={StaticResource BoolToVisibleConverter}}"/>
+
+                    <Button Content="🎱 TABLES" 
+                    Click="Settings_Click"
+                    Width="145" 
+                    Height="50"
+                    Background="#0f3460" 
+                    Foreground="White"
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    BorderThickness="0"
+                    Margin="5,0"
+                    Cursor="Hand"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>

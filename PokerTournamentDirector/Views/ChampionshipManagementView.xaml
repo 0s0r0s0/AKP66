@@ -1,0 +1,215 @@
+<Window x:Class="PokerTournamentDirector.Views.ChampionshipManagementView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="📊 Gestion des Championnats" 
+        Height="700" Width="1200"
+        WindowStartupLocation="CenterScreen"
+        Background="#1a1a2e">
+
+    <Window.Resources>
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#0f3460"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#16213e"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#00ff88"/>
+            <Setter Property="Foreground" Value="#1a1a2e"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#00cc6a"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#e94560"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#c93750"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="📊 Gestion des Championnats"
+                   FontSize="28"
+                   FontWeight="Bold"
+                   Foreground="#00ff88"
+                   Margin="0,0,0,20"/>
+
+        <!-- Barre d'outils -->
+        <Grid Grid.Row="1" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Button Content="➕ Nouveau Championnat"
+                        Command="{Binding CreateChampionshipCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        Margin="0,0,10,0"/>
+
+                <Button Content="✏️ Modifier"
+                        Command="{Binding EditChampionshipCommand}"
+                        Style="{StaticResource ModernButton}"
+                        Margin="0,0,10,0"/>
+
+                <Button Content="📦 Archiver"
+                        Command="{Binding ArchiveChampionshipCommand}"
+                        Style="{StaticResource ModernButton}"
+                        Margin="0,0,10,0"/>
+
+                <Button Content="🗑️ Supprimer"
+                        Command="{Binding DeleteChampionshipCommand}"
+                        Style="{StaticResource DangerButton}"/>
+            </StackPanel>
+
+            <CheckBox Grid.Column="1"
+                      Content="Afficher archivés"
+                      IsChecked="{Binding ShowArchived}"
+                      Foreground="White"
+                      FontSize="14"
+                      VerticalAlignment="Center"/>
+        </Grid>
+
+        <!-- Liste des championnats -->
+        <Border Grid.Row="2" 
+                Background="#0f3460"
+                CornerRadius="10"
+                BorderBrush="#00ff88"
+                BorderThickness="1">
+            <DataGrid x:Name="ChampionshipsGrid"
+                      ItemsSource="{Binding Championships}"
+                      SelectedItem="{Binding SelectedChampionship}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      Background="Transparent"
+                      BorderThickness="0"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#16213e"
+                      RowBackground="#0f3460"
+                      AlternatingRowBackground="#16213e"
+                      Foreground="White"
+                      FontSize="14"
+                      HeadersVisibility="Column"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow"
+                      MouseDoubleClick="ChampionshipsGrid_MouseDoubleClick">
+
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#16213e"/>
+                        <Setter Property="Foreground" Value="#00ff88"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="FontSize" Value="14"/>
+                        <Setter Property="Padding" Value="15,10"/>
+                        <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                        <Setter Property="BorderBrush" Value="#00ff88"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+
+                <DataGrid.CellStyle>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Padding" Value="15,8"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#00ff88"/>
+                                <Setter Property="Foreground" Value="#1a1a2e"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.CellStyle>
+
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nom" 
+                                        Binding="{Binding Name}" 
+                                        Width="2*"/>
+
+                    <DataGridTextColumn Header="Saison" 
+                                        Binding="{Binding Season}" 
+                                        Width="*"/>
+
+                    <DataGridTextColumn Header="Statut" 
+                                        Binding="{Binding Status}" 
+                                        Width="*"/>
+
+                    <DataGridTextColumn Header="Début" 
+                                        Binding="{Binding StartDate, StringFormat='dd/MM/yyyy'}" 
+                                        Width="*"/>
+
+                    <DataGridTextColumn Header="Fin" 
+                                        Binding="{Binding EndDate, StringFormat='dd/MM/yyyy'}" 
+                                        Width="*"/>
+
+                    <DataGridTextColumn Header="Manches" 
+                                        Binding="{Binding Matches.Count}" 
+                                        Width="80"/>
+
+                    <DataGridTemplateColumn Header="Actions" Width="150">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="📊 Tableau de bord"
+                                        Command="{Binding DataContext.OpenDashboardCommand, 
+                                                  RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Style="{StaticResource ModernButton}"
+                                        Padding="10,5"
+                                        FontSize="12"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="3" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right"
+                    Margin="0,15,0,0">
+            <TextBlock Foreground="White" FontSize="14" VerticalAlignment="Center">
+                <Run Text="{Binding Championships.Count, Mode=OneWay}"/>
+                <Run Text=" championnat(s)"/>
+            </TextBlock>
+        </StackPanel>
+    </Grid>
+</Window>

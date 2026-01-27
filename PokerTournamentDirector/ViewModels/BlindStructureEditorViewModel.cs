@@ -9,68 +9,99 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
+/// v2.0 - GEstion des structures de blinds
 namespace PokerTournamentDirector.ViewModels
 {
+    /// <summary>
+    /// ViewModel principal pour l'éditeur de structures de blinds.
+    /// Gère le chargement, l'édition, la création, la suppression et la génération automatique de structures.
+    /// </summary>
     public partial class BlindStructureEditorViewModel : ObservableObject
     {
         private readonly BlindStructureService _blindService;
 
-        [ObservableProperty]
-        private ObservableCollection<BlindStructure> _structures = new();
+        #region Propriétés observables - Liste et sélection
 
         [ObservableProperty]
-        private BlindStructure? _selectedStructure;
+        private ObservableCollection<BlindStructure> structures = new();
 
         [ObservableProperty]
-        private ObservableCollection<BlindLevel> _currentLevels = new();
+        private BlindStructure? selectedStructure;
 
         [ObservableProperty]
-        private string _structureName = string.Empty;
+        private ObservableCollection<BlindLevel> currentLevels = new();
+
+        #endregion
+
+        #region Propriétés observables - Informations structure
 
         [ObservableProperty]
-        private string _structureDescription = string.Empty;
+        private string structureName = string.Empty;
 
         [ObservableProperty]
-        private int _totalDuration = 0;
+        private string structureDescription = string.Empty;
 
         [ObservableProperty]
-        private bool _isEditing = false;
-
-        // Générateur automatique
-        [ObservableProperty]
-        private int _autoTargetDuration = 120;
+        private int totalDuration;
 
         [ObservableProperty]
-        private int _autoStartingBlind = 25;
+        private bool isEditing;
+
+        #endregion
+
+        #region Propriétés observables - Générateur automatique
 
         [ObservableProperty]
-        private int _autoLevelDuration = 20;
+        private int autoTargetDuration = 120;
 
         [ObservableProperty]
-        private bool _autoWithAnte = false;
+        private int autoStartingBlind = 25;
 
         [ObservableProperty]
-        private int _autoNumberOfBreaks = 2;
+        private int autoLevelDuration = 20;
 
         [ObservableProperty]
-        private int _autoBreakDuration = 15;
+        private bool autoWithAnte;
+
+        [ObservableProperty]
+        private int autoNumberOfBreaks = 2;
+
+        [ObservableProperty]
+        private int autoBreakDuration = 15;
+
+        [ObservableProperty]
+        private int autoStartingStack = 10000;
+
+        [ObservableProperty]
+        private int autoAveragePlayers = 10;
+
+        #endregion
+
+        #region Constructeur et initialisation
 
         public BlindStructureEditorViewModel(BlindStructureService blindService)
         {
             _blindService = blindService;
         }
 
+        /// <summary>
+        /// Initialise le ViewModel en chargeant les structures existantes.
+        /// </summary>
         public async Task InitializeAsync()
         {
             await LoadStructuresAsync();
         }
 
+        #endregion
+
+        #region Chargement et sélection des structures
+
         [RelayCommand]
         private async Task LoadStructuresAsync()
         {
             var structures = await _blindService.GetAllStructuresAsync();
-
             Structures.Clear();
+
             foreach (var structure in structures)
             {
                 Structures.Add(structure);
@@ -100,6 +131,10 @@ namespace PokerTournamentDirector.ViewModels
             IsEditing = true;
         }
 
+        #endregion
+
+        #region Création et modification manuelle
+
         [RelayCommand]
         private void NewStructure()
         {
@@ -110,7 +145,6 @@ namespace PokerTournamentDirector.ViewModels
 
             // Ajouter un premier niveau par défaut
             AddLevel();
-
             IsEditing = true;
         }
 
@@ -119,7 +153,7 @@ namespace PokerTournamentDirector.ViewModels
         {
             int nextLevelNumber = CurrentLevels.Any() ? CurrentLevels.Max(l => l.LevelNumber) + 1 : 1;
 
-            // Suggérer des blinds basées sur le dernier niveau
+            // Suggestion basée sur le dernier niveau
             int sb = 25, bb = 50, ante = 0;
             if (CurrentLevels.Any())
             {
@@ -169,7 +203,7 @@ namespace PokerTournamentDirector.ViewModels
         {
             CurrentLevels.Remove(level);
 
-            // Renuméroter les niveaux
+            // Renumérotation des niveaux
             int levelNum = 1;
             foreach (var l in CurrentLevels.OrderBy(x => x.LevelNumber))
             {
@@ -178,6 +212,10 @@ namespace PokerTournamentDirector.ViewModels
 
             CalculateTotalDuration();
         }
+
+        #endregion
+
+        #region Sauvegarde, suppression et duplication
 
         [RelayCommand]
         private async Task SaveStructureAsync()
@@ -207,17 +245,17 @@ namespace PokerTournamentDirector.ViewModels
 
                     var created = await _blindService.CreateStructureAsync(newStructure);
 
-                    // Ajouter les niveaux
                     foreach (var level in CurrentLevels)
                     {
                         level.BlindStructureId = created.Id;
+                        created.Levels.Add(level);  // ← Ajout crucial : associe les niveaux à la structure
                     }
 
                     await _blindService.UpdateStructureAsync(created);
                 }
                 else
                 {
-                    // Modification
+                    // Modification existante
                     SelectedStructure.Name = StructureName;
                     SelectedStructure.Description = StructureDescription;
                     SelectedStructure.Levels = CurrentLevels.ToList();
@@ -226,7 +264,6 @@ namespace PokerTournamentDirector.ViewModels
                 }
 
                 CustomMessageBox.ShowSuccess("Structure sauvegardée avec succès !", "Succès");
-
                 await LoadStructuresAsync();
                 IsEditing = false;
             }
@@ -250,7 +287,6 @@ namespace PokerTournamentDirector.ViewModels
                 await _blindService.DeleteStructureAsync(SelectedStructure.Id);
                 await LoadStructuresAsync();
                 IsEditing = false;
-
                 CustomMessageBox.ShowSuccess("Structure supprimée.", "Succès");
             }
         }
@@ -267,6 +303,10 @@ namespace PokerTournamentDirector.ViewModels
             CustomMessageBox.ShowSuccess($"Structure dupliquée : {newName}", "Succès");
         }
 
+        #endregion
+
+        #region Génération automatique
+
         [RelayCommand]
         private void GenerateAuto()
         {
@@ -277,7 +317,9 @@ namespace PokerTournamentDirector.ViewModels
                 AutoLevelDuration,
                 AutoWithAnte,
                 AutoNumberOfBreaks,
-                AutoBreakDuration);
+                AutoBreakDuration,
+                AutoStartingStack,
+                AutoAveragePlayers);
 
             StructureName = generated.Name;
             StructureDescription = generated.Description ?? string.Empty;
@@ -299,6 +341,10 @@ namespace PokerTournamentDirector.ViewModels
                 "Structure générée");
         }
 
+        #endregion
+
+        #region Utilitaires
+
         private void CalculateTotalDuration()
         {
             TotalDuration = CurrentLevels.Sum(l => l.DurationMinutes);
@@ -311,5 +357,7 @@ namespace PokerTournamentDirector.ViewModels
             SelectedStructure = null;
             CurrentLevels.Clear();
         }
+
+        #endregion
     }
 }

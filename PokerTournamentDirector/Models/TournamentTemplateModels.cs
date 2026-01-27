@@ -21,8 +21,8 @@ namespace PokerTournamentDirector.Models
         public TournamentTemplateType Type { get; set; } = TournamentTemplateType.Cash;
         public string Currency { get; set; } = "EUR"; // EUR, USD, GBP, POINTS
 
-        public decimal BuyIn { get; set; }
-        public decimal Rake { get; set; } = 0;
+        public int BuyIn { get; set; }
+        public int Rake { get; set; } = 0;
         public RakeType RakeType { get; set; } = RakeType.Percentage;
 
         // Structure & Technique
