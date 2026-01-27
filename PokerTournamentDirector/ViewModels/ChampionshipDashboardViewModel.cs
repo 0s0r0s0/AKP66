@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using PokerTournamentDirector.Data;
 using PokerTournamentDirector.Models;
 using PokerTournamentDirector.Services;
 using PokerTournamentDirector.Views;
@@ -14,6 +16,7 @@ namespace PokerTournamentDirector.ViewModels
     public partial class ChampionshipDashboardViewModel : ObservableObject
     {
         private readonly ChampionshipService _championshipService;
+        private readonly PokerDbContext _context;
         private  int _championshipId;
 
         [ObservableProperty]
@@ -42,6 +45,12 @@ namespace PokerTournamentDirector.ViewModels
             "Trimestriel"
         };
 
+        [ObservableProperty]
+        private ObservableCollection<string> availablePeriods = new();
+
+        [ObservableProperty]
+        private string? selectedPeriod;
+
         // === ONGLET STATISTIQUES ===
         [ObservableProperty]
         private string _statsTimePeriod = "Toujours";
@@ -68,9 +77,30 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty]
         private ObservableCollection<PlayerStatistics> _playerStatistics = new();
 
+        [ObservableProperty]
+        private string selectedStatsPlayer = "Tous";
+
+        [ObservableProperty]
+        private ObservableCollection<string> statsPlayerList = new();
+
+        [ObservableProperty]
+        private PlayerDetailedStats? detailedStats;
+
         // === ONGLET MANCHES ===
         [ObservableProperty]
         private ObservableCollection<ChampionshipMatch> _matches = new();
+        [ObservableProperty]
+        private ObservableCollection<MatchPlayerResult> _matchResults = new();
+
+        [ObservableProperty]
+        private string _matchDetailsTitle = "";
+
+        [ObservableProperty]
+        private bool _isMatchDetailsVisible = false;
+        [ObservableProperty]
+        private bool showCoefficientColumn = false;
+
+
 
         [ObservableProperty]
         private ChampionshipMatch? _selectedMatch;
@@ -92,6 +122,8 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty]
         private string _logFilterAction = "Toutes";
 
+        
+
         public ObservableCollection<string> LogActions { get; } = new()
         {
             "Toutes",
@@ -106,6 +138,7 @@ namespace PokerTournamentDirector.ViewModels
         {
             _championshipService = championshipService;
             _championshipId = championshipId;
+            _context = new PokerDbContext();
         }
 
         public async Task InitializeAsync()
@@ -119,6 +152,9 @@ namespace PokerTournamentDirector.ViewModels
         private async Task LoadChampionshipAsync()
         {
             Championship = await _championshipService.GetChampionshipAsync(_championshipId);
+
+            // AJOUTE après le chargement :
+            OnSelectedStandingPeriodChanged(SelectedStandingPeriod); // Force le rechargement des périodes
         }
 
         // === CLASSEMENT ===
@@ -154,9 +190,125 @@ namespace PokerTournamentDirector.ViewModels
 
         partial void OnSelectedStandingPeriodChanged(string value)
         {
-            // Changer l'affichage selon la période sélectionnée
-            // TODO: Filtrer sur mensuel/trimestriel
+            if (Championship == null) return; // <-- AJOUTE cette vérification
+
+            AvailablePeriods.Clear();
+
+            if (value == "Mensuel")
+            {
+                var months = Championship.Matches
+                    .Select(m => m.MatchDate)
+                    .GroupBy(d => new { d.Year, d.Month })
+                    .OrderByDescending(g => g.Key.Year).ThenByDescending(g => g.Key.Month)
+                    .Select(g => $"{GetMonthName(g.Key.Month)} {g.Key.Year}")
+                    .ToList();
+
+                foreach (var month in months)
+                    AvailablePeriods.Add(month);
+
+                SelectedPeriod = AvailablePeriods.FirstOrDefault();
+            }
+            else if (value == "Trimestriel")
+            {
+                var quarters = Championship.Matches
+                    .Select(m => m.MatchDate)
+                    .GroupBy(d => new { d.Year, Quarter = (d.Month - 1) / 3 + 1 })
+                    .OrderByDescending(g => g.Key.Year).ThenByDescending(g => g.Key.Quarter)
+                    .Select(g => $"Q{g.Key.Quarter} {g.Key.Year}")
+                    .ToList();
+
+                foreach (var q in quarters)
+                    AvailablePeriods.Add(q);
+
+                SelectedPeriod = AvailablePeriods.FirstOrDefault();
+            }
+
+            _ = FilterStandingsByPeriodAsync();
         }
+
+        partial void OnSelectedPeriodChanged(string? value)
+        {
+            _ = FilterStandingsByPeriodAsync();
+        }
+
+        // Dans ChampionshipDashboardViewModel.cs - REMPLACE FilterStandingsByPeriodAsync
+
+        private async Task FilterStandingsByPeriodAsync()
+        {
+            if (Championship == null || string.IsNullOrEmpty(SelectedStandingPeriod) || string.IsNullOrEmpty(SelectedPeriod))
+                return;
+
+            // Parse la période sélectionnée
+            DateTime startDate, endDate;
+
+            if (SelectedStandingPeriod == "Mensuel")
+            {
+                var parts = SelectedPeriod.Split(' ');
+                int month = GetMonthNumber(parts[0]);
+                int year = int.Parse(parts[1]);
+                startDate = new DateTime(year, month, 1);
+                endDate = startDate.AddMonths(1).AddDays(-1);
+            }
+            else if (SelectedStandingPeriod == "Trimestriel")
+            {
+                var parts = SelectedPeriod.Split(' ');
+                int quarter = int.Parse(parts[0].Replace("Q", ""));
+                int year = int.Parse(parts[1]);
+                int startMonth = (quarter - 1) * 3 + 1;
+                startDate = new DateTime(year, startMonth, 1);
+                endDate = startDate.AddMonths(3).AddDays(-1);
+            }
+            else
+            {
+                await LoadStandingsAsync();
+                return;
+            }
+
+            // Filtrer standings (affiche juste tous pour l'instant)
+            // TODO: Calcul réel par période dans ChampionshipService
+            Standings.Clear();
+
+            var allStandings = Championship.Standings
+                .OrderBy(s => s.CurrentPosition)
+                .ToList();
+
+            foreach (var s in allStandings)
+                Standings.Add(s);
+        }
+
+        private string GetMonthName(int month) => month switch
+        {
+            1 => "Janvier",
+            2 => "Février",
+            3 => "Mars",
+            4 => "Avril",
+            5 => "Mai",
+            6 => "Juin",
+            7 => "Juillet",
+            8 => "Août",
+            9 => "Septembre",
+            10 => "Octobre",
+            11 => "Novembre",
+            12 => "Décembre",
+            _ => ""
+        };
+
+        private int GetMonthNumber(string month) => month switch
+        {
+            "Janvier" => 1,
+            "Février" => 2,
+            "Mars" => 3,
+            "Avril" => 4,
+            "Mai" => 5,
+            "Juin" => 6,
+            "Juillet" => 7,
+            "Août" => 8,
+            "Septembre" => 9,
+            "Octobre" => 10,
+            "Novembre" => 11,
+            "Décembre" => 12,
+            _ => 1
+        };
 
         // === STATISTIQUES ===
 
@@ -165,14 +317,157 @@ namespace PokerTournamentDirector.ViewModels
         {
             if (Championship == null) return;
 
-            PlayerStatistics.Clear();
-
-            foreach (var standing in Standings)
+            // Remplir liste des joueurs
+            StatsPlayerList.Clear();
+            StatsPlayerList.Add("Tous");
+            foreach (var s in Standings.OrderBy(s => s.CurrentPosition))
             {
-                var stats = await CalculatePlayerStatisticsAsync(standing);
-                PlayerStatistics.Add(stats);
+                StatsPlayerList.Add(s.Player?.Name ?? "Inconnu");
+            }
+
+            if (string.IsNullOrEmpty(SelectedStatsPlayer) || SelectedStatsPlayer == "Tous")
+            {
+                DetailedStats = null;
+                PlayerStatistics.Clear();
+
+                // Stats globales pour tous
+                foreach (var standing in Standings.OrderBy(s => s.CurrentPosition))
+                {
+                    var stats = await CalculatePlayerDetailedStatsAsync(standing);
+                    PlayerStatistics.Add(new PlayerStatistics
+                    {
+                        PlayerName = stats.PlayerName,
+                        MatchesPlayed = stats.MatchesPlayed,
+                        Victories = stats.Victories,
+                        VictoryPercentage = stats.WinRate,
+                        Top3Count = stats.Top3Count,
+                        Top3Percentage = stats.Top3Rate,
+                        AveragePosition = stats.AveragePosition,
+                        TotalPoints = stats.TotalPoints,
+                        AveragePoints = stats.AveragePoints,
+                        TotalBounties = stats.TotalBounties,
+                        TotalWinnings = (double)stats.TotalWinnings,
+                        ROI = stats.ROI
+                    });
+                }
+            }
+            else
+            {
+                // Stats détaillées pour 1 joueur
+                var standing = Standings.FirstOrDefault(s => s.Player?.Name == SelectedStatsPlayer);
+                if (standing != null)
+                {
+                    DetailedStats = await CalculatePlayerDetailedStatsAsync(standing);
+                }
             }
         }
+
+        private async Task<PlayerDetailedStats> CalculatePlayerDetailedStatsAsync(ChampionshipStanding standing)
+        {
+            var performances = await GetPlayerPerformancesWithDetailsAsync(Championship.Id, standing.PlayerId);
+
+            var stats = new PlayerDetailedStats
+            {
+                PlayerName = standing.Player?.Name ?? "Inconnu",
+                MatchesPlayed = standing.MatchesPlayed,
+                CurrentRank = standing.CurrentPosition,
+                TotalPoints = standing.TotalPoints,
+
+                // Performance
+                Victories = standing.Victories,
+                WinRate = standing.MatchesPlayed > 0 ? (double)standing.Victories / standing.MatchesPlayed * 100 : 0,
+                Top3Count = standing.Top3Finishes,
+                Top3Rate = standing.MatchesPlayed > 0 ? (double)standing.Top3Finishes / standing.MatchesPlayed * 100 : 0,
+                AveragePosition = (double)standing.AveragePosition,
+                BestPosition = standing.BestPosition ?? 0,
+                WorstPosition = standing.WorstPosition ?? 0,
+
+                // Points
+                AveragePoints = standing.MatchesPlayed > 0 ? (double)standing.TotalPoints / standing.MatchesPlayed : 0,
+                BestPointsMatch = performances.Any() ? performances.Max(p => p.Points) : 0,
+                WorstPointsMatch = performances.Any() ? performances.Min(p => p.Points) : 0,
+
+                // Bounties
+                TotalBounties = standing.TotalBounties,
+                AverageBounties = standing.MatchesPlayed > 0 ? (double)standing.TotalBounties / standing.MatchesPlayed : 0,
+                BestBountiesMatch = performances.Any() ? performances.Max(p => p.Bounties) : 0,
+
+                // Financier
+                TotalWinnings = standing.TotalWinnings,
+                AverageWinnings = standing.MatchesPlayed > 0 ? standing.TotalWinnings / standing.MatchesPlayed : 0,
+                BestWinningsMatch = performances.Any() ? performances.Max(p => p.Winnings) : 0,
+                ROI = (double)standing.ROI,
+
+                // Progression (5 derniers)
+                FormRecent = string.Join(" ", performances.OrderByDescending(p => p.Date).Take(5).Select(p =>
+                    p.Position == 1 ? "🥇" : p.Position == 2 ? "🥈" : p.Position == 3 ? "🥉" : p.Position <= 5 ? "⭐" : "•")),
+                PositionChange = standing.CurrentPosition - (standing.PreviousPosition ?? standing.CurrentPosition),
+                Trend = GetTrend(standing.CurrentPosition, standing.PreviousPosition),
+
+                // Meilleurs matchs
+                BestMatches = performances.OrderByDescending(p => p.Points).Take(3).Select(p => new MatchHighlight
+                {
+                    MatchName = p.MatchName,
+                    Date = p.Date,
+                    Position = p.Position,
+                    Points = p.Points,
+                    Bounties = p.Bounties,
+                    Winnings = p.Winnings
+                }).ToList(),
+
+                // Pires matchs
+                WorstMatches = performances.OrderBy(p => p.Points).Take(3).Select(p => new MatchHighlight
+                {
+                    MatchName = p.MatchName,
+                    Date = p.Date,
+                    Position = p.Position,
+                    Points = p.Points,
+                    Bounties = p.Bounties,
+                    Winnings = p.Winnings
+                }).ToList()
+            };
+
+            return stats;
+        }
+
+        private async Task<List<PerformanceDetail>> GetPlayerPerformancesWithDetailsAsync(int championshipId, int playerId)
+        {
+            var matches = await _context.ChampionshipMatches
+                .Where(m => m.ChampionshipId == championshipId)
+                .Include(m => m.Tournament)
+                .OrderBy(m => m.MatchDate)
+                .ToListAsync();
+
+            var performances = new List<PerformanceDetail>();
+
+            foreach (var match in matches)
+            {
+                var tp = await _context.TournamentPlayers
+                    .FirstOrDefaultAsync(t => t.TournamentId == match.TournamentId && t.PlayerId == playerId);
+
+                if (tp != null && tp.FinishPosition.HasValue)
+                {
+                    performances.Add(new PerformanceDetail
+                    {
+                        MatchName = match.Tournament?.Name ?? "",
+                        Date = match.MatchDate,
+                        Position = tp.FinishPosition.Value,
+                        Points = tp.ChampionshipPoints,
+                        Bounties = tp.BountyKills,
+                        Winnings = tp.Winnings ?? 0
+                    });
+                }
+            }
+
+            return performances;
+        }
+
+        private string GetTrend(int current, int? previous)
+        {
+            if (!previous.HasValue || previous == current) return "➡️";
+            return current < previous ? "⬆️" : "⬇️";
+        }
+
 
         private async Task<PlayerStatistics> CalculatePlayerStatisticsAsync(ChampionshipStanding standing)
         {
@@ -293,7 +588,7 @@ namespace PokerTournamentDirector.ViewModels
         }
 
         [RelayCommand]
-        private void ViewMatchDetails()
+        private async Task ViewMatchDetailsAsync()
         {
             if (SelectedMatch == null)
             {
@@ -301,9 +596,138 @@ namespace PokerTournamentDirector.ViewModels
                 return;
             }
 
-            // TODO: Ouvrir fenêtre détails de la manche
-            // Afficher résultats complets du tournoi
+            try
+            {
+                var match = await _context.ChampionshipMatches
+                    .Include(m => m.Tournament)
+                        .ThenInclude(t => t.Players)
+                            .ThenInclude(tp => tp.Player)
+                    .Include(m => m.Championship)
+                    .FirstOrDefaultAsync(m => m.Id == SelectedMatch.Id);
+
+                if (match?.Tournament == null)
+                {
+                    CustomMessageBox.ShowError("Impossible de charger les détails de la manche.");
+                    return;
+                }
+
+                var championship = match.Championship;
+                var tournament = match.Tournament;
+
+                var rebuys = await _context.PlayerRebuys
+                    .Where(r => r.TournamentId == tournament.Id)
+                    .GroupBy(r => r.PlayerId)
+                    .Select(g => new { PlayerId = g.Key, Count = g.Count() })
+                    .ToListAsync();
+
+                var rebuyDict = rebuys.ToDictionary(r => r.PlayerId, r => r.Count);
+
+                MatchResults.Clear();
+
+                foreach (var tp in tournament.Players.Where(p => p.FinishPosition.HasValue).OrderBy(p => p.FinishPosition))
+                {
+                    var perf = new PlayerPerformance
+                    {
+                        MatchId = match.Id,
+                        Position = tp.FinishPosition.Value,
+                        Bounties = tp.BountyKills,
+                        Winnings = tp.Winnings ?? 0,
+                        Coefficient = match.Coefficient
+                    };
+
+                    int points = CalculateMatchPoints(championship, perf);
+                    int displayPoints = (int)(points * match.Coefficient);
+
+                    MatchResults.Add(new MatchPlayerResult
+                    {
+                        Position = tp.FinishPosition.Value,
+                        PlayerName = tp.Player?.Name ?? "Inconnu",
+                        BasePoints = points,
+                        Coefficient = match.Coefficient,
+                        TotalPoints = displayPoints,
+                        Bounties = tp.BountyKills,
+                        Rebuys = tp.RebuyCount, // 
+                        Winnings = tp.Winnings ?? 0,
+                        ShowCoefficient = match.Coefficient != 1.0m
+                    });
+
+                    ShowCoefficientColumn = MatchResults.Any(r => r.Coefficient != 1.0m);
+                }
+
+                
+
+                MatchDetailsTitle = $"Manche #{match.MatchNumber} - {tournament.Name} ({match.MatchDate:dd/MM/yyyy})";
+
+                var detailsWindow = new MatchDetailsWindow
+                {
+                    DataContext = this,
+                    Owner = System.Windows.Application.Current.MainWindow
+                };
+                detailsWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur lors du chargement : {ex.Message}");
+            }
         }
+
+        private int CalculateMatchPoints(Championship championship, PlayerPerformance perf)
+        {
+            int basePoints = 0;
+
+            switch (championship.PointsMode)
+            {
+                case ChampionshipPointsMode.Linear:
+                    basePoints = Math.Max(1, championship.LinearFirstPlacePoints - (perf.Position - 1));
+                    break;
+
+                case ChampionshipPointsMode.FixedByPosition:
+                    basePoints = GetFixedPointsForPosition(championship, perf.Position);
+                    break;
+
+                case ChampionshipPointsMode.ProportionalPrizePool:
+                    if (perf.Winnings > 0)
+                        basePoints = (int)((perf.Winnings / Math.Max(1, perf.TotalPrizePool)) * championship.ProportionalTotalPoints);
+                    break;
+            }
+
+            if (championship.EnableParticipationPoints)
+                basePoints += championship.ParticipationPoints;
+
+            return basePoints;
+        }
+
+        private int GetFixedPointsForPosition(Championship championship, int position)
+        {
+            if (string.IsNullOrEmpty(championship.FixedPointsTable)) return 0;
+
+            try
+            {
+                var table = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int>>(championship.FixedPointsTable);
+                if (table == null) return 0;
+
+                if (table.ContainsKey(position.ToString()))
+                    return table[position.ToString()];
+
+                foreach (var kvp in table)
+                {
+                    if (kvp.Key.Contains("-"))
+                    {
+                        var parts = kvp.Key.Split('-');
+                        if (int.TryParse(parts[0], out int min) && int.TryParse(parts[1], out int max))
+                        {
+                            if (position >= min && position <= max)
+                                return kvp.Value;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return 0;
+        }
+
+      
 
         // === JOUEURS ===
 
@@ -466,5 +890,81 @@ namespace PokerTournamentDirector.ViewModels
         public int TotalMinutesPlayed { get; set; }
         public int AverageMinutesPerMatch { get; set; }
         public int TotalHoursPlayed => TotalMinutesPlayed / 60;
+    }
+
+    // Classe helper pour les résultats
+    public class MatchPlayerResult
+    {
+        public int Position { get; set; }
+        public string PlayerName { get; set; } = "";
+        public int BasePoints { get; set; }
+        public decimal Coefficient { get; set; }
+        public int TotalPoints { get; set; }
+        public int Bounties { get; set; }
+        public int Rebuys { get; set; }
+        public decimal Winnings { get; set; }
+        public bool ShowCoefficient { get; set; } 
+    }
+
+    public class PlayerDetailedStats
+    {
+        // Général
+        public string PlayerName { get; set; } = "";
+        public int MatchesPlayed { get; set; }
+        public int CurrentRank { get; set; }
+        public int TotalPoints { get; set; }
+
+        // Performance
+        public int Victories { get; set; }
+        public double WinRate { get; set; }
+        public int Top3Count { get; set; }
+        public double Top3Rate { get; set; }
+        public double AveragePosition { get; set; }
+        public int BestPosition { get; set; }
+        public int WorstPosition { get; set; }
+
+        // Points
+        public double AveragePoints { get; set; }
+        public int BestPointsMatch { get; set; }
+        public int WorstPointsMatch { get; set; }
+
+        // Bounties
+        public int TotalBounties { get; set; }
+        public double AverageBounties { get; set; }
+        public int BestBountiesMatch { get; set; }
+
+        // Financier
+        public decimal TotalWinnings { get; set; }
+        public decimal AverageWinnings { get; set; }
+        public decimal BestWinningsMatch { get; set; }
+        public double ROI { get; set; }
+
+        // Progression
+        public string FormRecent { get; set; } = ""; // 5 derniers résultats
+        public int PositionChange { get; set; }
+        public string Trend { get; set; } = ""; // "⬆️", "⬇️", "➡️"
+
+        // Matchs mémorables
+        public List<MatchHighlight> BestMatches { get; set; } = new();
+        public List<MatchHighlight> WorstMatches { get; set; } = new();
+    }
+
+    public class MatchHighlight
+    {
+        public string MatchName { get; set; } = "";
+        public DateTime Date { get; set; }
+        public int Position { get; set; }
+        public int Points { get; set; }
+        public int Bounties { get; set; }
+        public decimal Winnings { get; set; }
+    }
+    public class PerformanceDetail
+    {
+        public string MatchName { get; set; } = "";
+        public DateTime Date { get; set; }
+        public int Position { get; set; }
+        public int Points { get; set; }
+        public int Bounties { get; set; }
+        public decimal Winnings { get; set; }
     }
 }

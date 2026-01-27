@@ -1,3 +1,4 @@
+using PokerTournamentDirector.Data;
 using PokerTournamentDirector.Services;
 using PokerTournamentDirector.ViewModels;
 using System.Windows;
@@ -8,13 +9,14 @@ namespace PokerTournamentDirector.Views
     {
         private readonly ChampionshipDashboardViewModel _viewModel;
 
-        public ChampionshipDashboardView(int championshipId, ChampionshipService championshipService)
+        public ChampionshipDashboardView(
+            int championshipId,
+            ChampionshipService championshipService)
         {
             InitializeComponent();
-
-            _viewModel = new ChampionshipDashboardViewModel(championshipService, championshipId);
+            _viewModel = new ChampionshipDashboardViewModel(
+                championshipService, championshipId );
             DataContext = _viewModel;
-
             Loaded += async (s, e) => await _viewModel.InitializeAsync();
         }
     }

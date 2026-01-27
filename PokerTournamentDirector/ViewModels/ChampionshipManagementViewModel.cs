@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
 using PokerTournamentDirector.Models;
 using PokerTournamentDirector.Services;
 using PokerTournamentDirector.Views;
