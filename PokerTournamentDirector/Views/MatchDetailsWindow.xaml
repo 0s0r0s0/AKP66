@@ -114,9 +114,20 @@
                 </DataGridTextColumn>-->
             </DataGrid.Columns>
         </DataGrid>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Content="📄 Exporter PDF"
+        Command="{Binding DataContext.ExportMatchPdfCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+        Width="150" Height="40"
+        Margin="10,20,50,0"
+                    Padding="10,10,10,10"
+        Background="#00ff88"
+        Foreground="#0a192f"
+        FontWeight="Bold"
+        BorderThickness="0"
+        Cursor="Hand"/>
 
-        <Button Grid.Row="2"
-                Content="Fermer"
+            <Button Grid.Row="2"
+                Content="❌​ Fermer"
                 Command="{Binding CloseMatchDetailsCommand}"
                 Width="120" Height="40"
                 Margin="0,20,0,0"
@@ -126,5 +137,6 @@
                 BorderThickness="0"
                 Cursor="Hand"
                 Click="CloseButton_Click"/>
+        </StackPanel>
     </Grid>
 </Window>

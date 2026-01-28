@@ -88,11 +88,7 @@
                         Margin="0,0,10,0"
                         Cursor="Hand"
                         FontSize="14"/>
-                <Button Content="🔄 Rafraîchir" 
-        Command="{Binding RefreshDataCommand}"
-        Width="120" Height="35"
-        Background="#00ff88" Foreground="#0a192f"
-        Margin="10"/>
+
                 <Button Content="📄 Export PDF"
                         Command="{Binding ExportStandingsPdfCommand}"
                         Background="#00ff88"

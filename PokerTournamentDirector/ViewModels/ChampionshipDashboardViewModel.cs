@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using iTextSharp.text;
+using iTextSharp.text.pdf;
 using Microsoft.EntityFrameworkCore;
 using PokerTournamentDirector.Data;
 using PokerTournamentDirector.Models;
@@ -8,6 +10,7 @@ using PokerTournamentDirector.Views;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -230,7 +233,6 @@ namespace PokerTournamentDirector.ViewModels
 
             if (SelectedStandingPeriod == "Général")
             {
-                // Affiche les standings déjà calculés par ChampionshipService
                 var allStandings = Championship.Standings
                     .Where(s => s.IsActive)
                     .OrderBy(s => s.CurrentPosition)
@@ -267,12 +269,10 @@ namespace PokerTournamentDirector.ViewModels
                 return;
             }
 
-            // Filtrer les matches de la période
             var periodMatches = Championship.Matches
                 .Where(m => m.MatchDate >= startDate && m.MatchDate <= endDate)
                 .ToList();
 
-            // Recalculer pour chaque joueur
             var playerStats = new Dictionary<int, PeriodStanding>();
 
             foreach (var match in periodMatches)
@@ -295,38 +295,12 @@ namespace PokerTournamentDirector.ViewModels
 
                     var stat = playerStats[tp.PlayerId];
 
-                    // Calculer points avec TOUTES les règles
-                    int basePoints = CalculateMatchPointsForPlayer(Championship, tp.FinishPosition.Value);
-                    basePoints = (int)(basePoints * match.Coefficient);
-
-                    // Bonus bounties
-                    if (Championship.CountBounties)
-                    {
-                        basePoints += tp.BountyKills * Championship.PointsPerBounty;
-                    }
-
-                    // Bonus victoire
-                    if (tp.FinishPosition == 1 && Championship.VictoryBonus > 0)
-                    {
-                        basePoints += Championship.VictoryBonus;
-                    }
-
-                    // Bonus top 3
-                    if (tp.FinishPosition <= 3 && Championship.Top3Bonus > 0)
-                    {
-                        basePoints += Championship.Top3Bonus;
-                    }
-
-                    // Pénalité recaves
-                    if (tp.RebuyCount > 0)
-                    {
-                        basePoints -= tp.RebuyCount * Championship.RebuyPointsPenalty;
-                        basePoints = (int)(basePoints * Championship.RebuyPointsMultiplier);
-                    }
+                    // CORRECTION : Calculer TOUS les points (base + bonus + malus) IMMÉDIATEMENT
+                    int totalMatchPoints = CalculateFullMatchPoints(Championship, match, tp);
 
                     stat.Performances.Add(new PeriodPerformance
                     {
-                        Points = basePoints,
+                        Points = totalMatchPoints, // Points COMPLETS avec tout
                         Position = tp.FinishPosition.Value,
                         Bounties = tp.BountyKills,
                         Winnings = tp.Winnings ?? 0
@@ -340,7 +314,7 @@ namespace PokerTournamentDirector.ViewModels
                 }
             }
 
-            // Appliquer BestXPerMonth / BestXPerQuarter
+            // Appliquer BestXPerMonth / BestXPerQuarter SUR LES POINTS COMPLETS
             foreach (var stat in playerStats.Values)
             {
                 int? bestX = null;
@@ -356,6 +330,7 @@ namespace PokerTournamentDirector.ViewModels
 
                 if (bestX.HasValue && stat.Performances.Count > bestX.Value)
                 {
+                    // CORRECTION : Trie par Points COMPLETS (avec bounties déjà inclus)
                     var bestPerfs = stat.Performances
                         .OrderByDescending(p => p.Points)
                         .Take(bestX.Value)
@@ -392,6 +367,41 @@ namespace PokerTournamentDirector.ViewModels
             }
         }
 
+        private int CalculateFullMatchPoints(Championship championship, ChampionshipMatch match, TournamentPlayer tp)
+        {
+            // Points de base selon le système choisi
+            int basePoints = CalculateMatchPointsForPlayer(championship, tp.FinishPosition.Value);
+
+            // Coefficient de manche
+            basePoints = (int)(basePoints * match.Coefficient);
+
+            // Bonus bounties
+            if (championship.CountBounties)
+            {
+                basePoints += tp.BountyKills * championship.PointsPerBounty;
+            }
+
+            // Bonus victoire
+            if (tp.FinishPosition == 1 && championship.VictoryBonus > 0)
+            {
+                basePoints += championship.VictoryBonus;
+            }
+
+            // Bonus top 3
+            if (tp.FinishPosition <= 3 && championship.Top3Bonus > 0)
+            {
+                basePoints += championship.Top3Bonus;
+            }
+
+            // Pénalité recaves
+            if (tp.RebuyCount > 0)
+            {
+                basePoints -= tp.RebuyCount * championship.RebuyPointsPenalty;
+                basePoints = (int)(basePoints * championship.RebuyPointsMultiplier);
+            }
+
+            return basePoints;
+        }
         private class PeriodStanding
         {
             public int PlayerId { get; set; }
@@ -735,17 +745,19 @@ namespace PokerTournamentDirector.ViewModels
 
                 foreach (var tp in tournament.Players.Where(p => p.FinishPosition.HasValue).OrderBy(p => p.FinishPosition))
                 {
-                    // CORRECTION : Utilise CalculateMatchPointsForPlayer au lieu de CalculateMatchPoints
-                    int points = CalculateMatchPointsForPlayer(championship, tp.FinishPosition.Value);
-                    int displayPoints = (int)(points * match.Coefficient);
+                    // Points de base (sans bonus)
+                    int basePoints = CalculateMatchPointsForPlayer(championship, tp.FinishPosition.Value);
+
+                    // Points totaux (avec TOUT : coef + bonus + malus)
+                    int totalPoints = CalculateFullMatchPoints(championship, match, tp);
 
                     MatchResults.Add(new MatchPlayerResult
                     {
                         Position = tp.FinishPosition.Value,
                         PlayerName = tp.Player?.Name ?? "Inconnu",
-                        BasePoints = points,
+                        BasePoints = basePoints, // Points bruts
                         Coefficient = match.Coefficient,
-                        TotalPoints = displayPoints,
+                        TotalPoints = totalPoints, // Points finaux avec tout
                         Bounties = tp.BountyKills,
                         Rebuys = tp.RebuyCount,
                         Winnings = tp.Winnings ?? 0
@@ -765,6 +777,171 @@ namespace PokerTournamentDirector.ViewModels
             {
                 CustomMessageBox.ShowError($"Erreur : {ex.Message}");
             }
+        }
+
+        // AJOUTE méthode pour export PDF classement
+        [RelayCommand]
+        private async Task ExportStandingsPdfAsync()
+        {
+            try
+            {
+                var saveDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "PDF files (*.pdf)|*.pdf",
+                    FileName = $"Classement_{Championship?.Name}_{SelectedStandingPeriod}_{SelectedPeriod?.Replace(" ", "_")}.pdf"
+                };
+
+                if (saveDialog.ShowDialog() == true)
+                {
+                    await GenerateStandingsPdf(saveDialog.FileName);
+                    CustomMessageBox.ShowSuccess($"PDF exporté : {saveDialog.FileName}", "Export réussi");
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur export PDF : {ex.Message}");
+            }
+        }
+
+        // AJOUTE méthode pour export PDF manche
+        [RelayCommand]
+        private async Task ExportMatchPdfAsync()
+        {
+            if (SelectedMatch == null || !MatchResults.Any())
+            {
+                CustomMessageBox.ShowWarning("Aucune manche sélectionnée ou détails non chargés.");
+                return;
+            }
+
+            try
+            {
+                var saveDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "PDF files (*.pdf)|*.pdf",
+                    FileName = $"Manche_{SelectedMatch.MatchNumber}_{SelectedMatch.MatchDate:yyyyMMdd}.pdf"
+                };
+
+                if (saveDialog.ShowDialog() == true)
+                {
+                    await GenerateMatchPdf(saveDialog.FileName);
+                    CustomMessageBox.ShowSuccess($"PDF exporté : {saveDialog.FileName}", "Export réussi");
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur export PDF : {ex.Message}");
+            }
+        }
+
+        private async Task GenerateStandingsPdf(string filePath)
+        {
+            var doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4, 40, 40, 60, 60);
+            PdfWriter.GetInstance(doc, new FileStream(filePath, FileMode.Create));
+            doc.Open();
+
+            // Header
+            var titleFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 20, iTextSharp.text.Font.BOLD, new BaseColor(0, 255, 136));
+            var headerFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 12, iTextSharp.text.Font.NORMAL, BaseColor.DARK_GRAY);
+            var tableHeaderFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 10, iTextSharp.text.Font.BOLD, BaseColor.WHITE);
+            var tableCellFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 9, iTextSharp.text.Font.NORMAL, BaseColor.BLACK);
+
+            var title = new Paragraph($"Classement {Championship?.Season}", titleFont);
+            title.Alignment = Element.ALIGN_CENTER;
+            title.SpacingAfter = 10f;
+            doc.Add(title);
+
+            var subtitle = new Paragraph($"{SelectedStandingPeriod} - {SelectedPeriod ?? "Saison complète"}", headerFont);
+            subtitle.Alignment = Element.ALIGN_CENTER;
+            subtitle.SpacingAfter = 5f;
+            doc.Add(subtitle);
+
+            var dateGenerated = new Paragraph($"Généré le {DateTime.Now:dd/MM/yyyy à HH:mm}", headerFont);
+            dateGenerated.Alignment = Element.ALIGN_CENTER;
+            dateGenerated.SpacingAfter = 20f;
+            doc.Add(dateGenerated);
+
+            // Tableau
+            var table = new PdfPTable(6) { WidthPercentage = 100 };
+            table.SetWidths(new float[] { 10f, 35f, 15f, 15f, 15f, 10f });
+
+            // Headers
+            AddPdfCell(table, "#", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
+            AddPdfCell(table, "Joueur", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_LEFT);
+            AddPdfCell(table, "Points", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
+            AddPdfCell(table, "Manches", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
+            AddPdfCell(table, "Victoires", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
+            AddPdfCell(table, "Kills", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
+
+            // Rows
+            foreach (var standing in Standings)
+            {
+                var rowColor = standing.CurrentPosition % 2 == 0 ? new BaseColor(240, 240, 240) : BaseColor.WHITE;
+
+                AddPdfCell(table, standing.CurrentPosition.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
+                AddPdfCell(table, standing.Player?.Name ?? "Inconnu", tableCellFont, rowColor, Element.ALIGN_LEFT);
+                AddPdfCell(table, standing.TotalPoints.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
+                AddPdfCell(table, standing.MatchesPlayed.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
+                AddPdfCell(table, standing.Victories.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
+                AddPdfCell(table, standing.TotalBounties.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
+            }
+
+            doc.Add(table);
+            doc.Close();
+        }
+
+        private async Task GenerateMatchPdf(string filePath)
+        {
+            var doc = new iTextSharp.text.Document(iTextSharp.text.PageSize.A4, 40, 40, 60, 60);
+            PdfWriter.GetInstance(doc, new FileStream(filePath, FileMode.Create));
+            doc.Open();
+
+            var titleFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 20, iTextSharp.text.Font.BOLD, new BaseColor(0, 255, 136));
+            var headerFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 12, iTextSharp.text.Font.NORMAL, BaseColor.DARK_GRAY);
+            var tableHeaderFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 10, iTextSharp.text.Font.BOLD, BaseColor.WHITE);
+            var tableCellFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 9, iTextSharp.text.Font.NORMAL, BaseColor.BLACK);
+
+            var title = new Paragraph(MatchDetailsTitle, titleFont);
+            title.Alignment = Element.ALIGN_CENTER;
+            title.SpacingAfter = 10f;
+            doc.Add(title);
+
+            var subtitle = new Paragraph($"{Championship?.Name} - Saison {Championship?.Season}", headerFont);
+            subtitle.Alignment = Element.ALIGN_CENTER;
+            subtitle.SpacingAfter = 20f;
+            doc.Add(subtitle);
+
+            var table = new PdfPTable(4) { WidthPercentage = 100 };
+            table.SetWidths(new float[] { 15f, 50f, 20f, 15f });
+
+            AddPdfCell(table, "Place", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
+            AddPdfCell(table, "Joueur", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_LEFT);
+            AddPdfCell(table, "Points", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
+            AddPdfCell(table, "Kills", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
+
+            foreach (var result in MatchResults)
+            {
+                var rowColor = result.Position % 2 == 0 ? new BaseColor(240, 240, 240) : BaseColor.WHITE;
+
+                AddPdfCell(table, result.Position.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
+                AddPdfCell(table, result.PlayerName, tableCellFont, rowColor, Element.ALIGN_LEFT);
+                AddPdfCell(table, result.TotalPoints.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER); // Points complets
+                AddPdfCell(table, result.Bounties.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
+            }
+
+            doc.Add(table);
+            doc.Close();
+        }
+
+        private void AddPdfCell(PdfPTable table, string text, iTextSharp.text.Font font, BaseColor bgColor, int alignment)
+        {
+            var cell = new PdfPCell(new Phrase(text, font))
+            {
+                BackgroundColor = bgColor,
+                Padding = 8f,
+                HorizontalAlignment = alignment,
+                VerticalAlignment = Element.ALIGN_MIDDLE
+            };
+            table.AddCell(cell);
         }
 
         private int CalculateMatchPointsForPlayer(Championship championship, int position)
@@ -923,11 +1100,6 @@ namespace PokerTournamentDirector.ViewModels
             }
         }
 
-        [RelayCommand]
-        private void ExportStandingsPdf()
-        {
-            CustomMessageBox.ShowInformation("Export PDF en cours de développement...");
-        }
     }
 
     // === CLASSES HELPERS ===
