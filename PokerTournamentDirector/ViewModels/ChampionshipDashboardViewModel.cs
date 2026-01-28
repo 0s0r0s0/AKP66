@@ -153,8 +153,11 @@ namespace PokerTournamentDirector.ViewModels
         {
             Championship = await _championshipService.GetChampionshipAsync(_championshipId);
 
-            // AJOUTE après le chargement :
-            OnSelectedStandingPeriodChanged(SelectedStandingPeriod); // Force le rechargement des périodes
+            // Initialiser les périodes APRÈS chargement
+            if (Championship != null && Championship.Matches.Any())
+            {
+                OnSelectedStandingPeriodChanged("Général"); // Force init
+            }
         }
 
         // === CLASSEMENT ===
@@ -190,40 +193,67 @@ namespace PokerTournamentDirector.ViewModels
 
         partial void OnSelectedStandingPeriodChanged(string value)
         {
-            if (Championship == null) return; // <-- AJOUTE cette vérification
+            if (Championship == null) return;
 
             AvailablePeriods.Clear();
 
+            // Debug : vérifier nombre de matches
+            System.Diagnostics.Debug.WriteLine($"Matches count: {Championship.Matches?.Count ?? 0}");
+
             if (value == "Mensuel")
             {
+                if (Championship.Matches == null || !Championship.Matches.Any())
+                {
+                    System.Diagnostics.Debug.WriteLine("Aucun match trouvé !");
+                    return;
+                }
+
                 var months = Championship.Matches
                     .Select(m => m.MatchDate)
                     .GroupBy(d => new { d.Year, d.Month })
                     .OrderByDescending(g => g.Key.Year).ThenByDescending(g => g.Key.Month)
-                    .Select(g => $"{GetMonthName(g.Key.Month)} {g.Key.Year}")
                     .ToList();
 
-                foreach (var month in months)
-                    AvailablePeriods.Add(month);
+                System.Diagnostics.Debug.WriteLine($"Mois trouvés: {months.Count}");
 
-                SelectedPeriod = AvailablePeriods.FirstOrDefault();
+                foreach (var month in months)
+                {
+                    var monthName = $"{GetMonthName(month.Key.Month)} {month.Key.Year}";
+                    AvailablePeriods.Add(monthName);
+                    System.Diagnostics.Debug.WriteLine($"Ajout période: {monthName}");
+                }
+
+                if (AvailablePeriods.Any())
+                    SelectedPeriod = AvailablePeriods.First();
             }
             else if (value == "Trimestriel")
             {
+                if (Championship.Matches == null || !Championship.Matches.Any())
+                    return;
+
                 var quarters = Championship.Matches
                     .Select(m => m.MatchDate)
                     .GroupBy(d => new { d.Year, Quarter = (d.Month - 1) / 3 + 1 })
                     .OrderByDescending(g => g.Key.Year).ThenByDescending(g => g.Key.Quarter)
-                    .Select(g => $"Q{g.Key.Quarter} {g.Key.Year}")
                     .ToList();
 
                 foreach (var q in quarters)
-                    AvailablePeriods.Add(q);
+                {
+                    AvailablePeriods.Add($"Q{q.Key.Quarter} {q.Key.Year}");
+                }
 
-                SelectedPeriod = AvailablePeriods.FirstOrDefault();
+                if (AvailablePeriods.Any())
+                    SelectedPeriod = AvailablePeriods.First();
             }
 
-            _ = FilterStandingsByPeriodAsync();
+            if (value != "Général")
+                _ = FilterStandingsByPeriodAsync();
+
+            System.Diagnostics.Debug.WriteLine($"AvailablePeriods.Count = {AvailablePeriods.Count}");
+            foreach (var p in AvailablePeriods)
+            {
+                System.Diagnostics.Debug.WriteLine($"  - {p}");
+            }
         }
 
         partial void OnSelectedPeriodChanged(string? value)
@@ -275,7 +305,15 @@ namespace PokerTournamentDirector.ViewModels
             foreach (var s in allStandings)
                 Standings.Add(s);
         }
-
+        [RelayCommand]
+        private async Task RefreshDataAsync()
+        {
+            Championship = await _championshipService.GetChampionshipAsync(_championshipId);
+            await LoadStandingsAsync();
+            await LoadMatchesAsync();
+            OnSelectedStandingPeriodChanged(SelectedStandingPeriod);
+            await LoadStatisticsAsync();
+        }
         private string GetMonthName(int month) => month switch
         {
             1 => "Janvier",
@@ -311,7 +349,6 @@ namespace PokerTournamentDirector.ViewModels
         };
 
         // === STATISTIQUES ===
-
         [RelayCommand]
         private async Task LoadStatisticsAsync()
         {
@@ -320,17 +357,27 @@ namespace PokerTournamentDirector.ViewModels
             // Remplir liste des joueurs
             StatsPlayerList.Clear();
             StatsPlayerList.Add("Tous");
+
+            // Recharger Standings si vide
+            if (!Standings.Any())
+            {
+                await LoadStandingsAsync();
+            }
+
             foreach (var s in Standings.OrderBy(s => s.CurrentPosition))
             {
-                StatsPlayerList.Add(s.Player?.Name ?? "Inconnu");
+                var playerName = s.Player?.Name ?? "Inconnu";
+                System.Diagnostics.Debug.WriteLine($"Ajout joueur stats: {playerName}");
+                StatsPlayerList.Add(playerName);
             }
+
+            System.Diagnostics.Debug.WriteLine($"Total joueurs: {StatsPlayerList.Count}");
 
             if (string.IsNullOrEmpty(SelectedStatsPlayer) || SelectedStatsPlayer == "Tous")
             {
                 DetailedStats = null;
                 PlayerStatistics.Clear();
 
-                // Stats globales pour tous
                 foreach (var standing in Standings.OrderBy(s => s.CurrentPosition))
                 {
                     var stats = await CalculatePlayerDetailedStatsAsync(standing);
@@ -353,12 +400,16 @@ namespace PokerTournamentDirector.ViewModels
             }
             else
             {
-                // Stats détaillées pour 1 joueur
                 var standing = Standings.FirstOrDefault(s => s.Player?.Name == SelectedStatsPlayer);
                 if (standing != null)
                 {
                     DetailedStats = await CalculatePlayerDetailedStatsAsync(standing);
                 }
+            }
+            System.Diagnostics.Debug.WriteLine($"StatsPlayerList.Count = {StatsPlayerList.Count}");
+            foreach (var p in StatsPlayerList)
+            {
+                System.Diagnostics.Debug.WriteLine($"  - {p}");
             }
         }
 

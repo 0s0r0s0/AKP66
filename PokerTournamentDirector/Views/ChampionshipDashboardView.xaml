@@ -88,7 +88,11 @@
                         Margin="0,0,10,0"
                         Cursor="Hand"
                         FontSize="14"/>
-
+                <Button Content="🔄 Rafraîchir" 
+        Command="{Binding RefreshDataCommand}"
+        Width="120" Height="35"
+        Background="#00ff88" Foreground="#0a192f"
+        Margin="10"/>
                 <Button Content="📄 Export PDF"
                         Command="{Binding ExportStandingsPdfCommand}"
                         Background="#00ff88"
@@ -139,7 +143,7 @@
                 BorderThickness="2"
                 Padding="20">
 
-            <!-- Utiliser un ContentControl avec DataTemplate -->
+            <!-- REMPLACE tout le ContentControl par : -->
             <ContentControl Content="{Binding SelectedTabIndex}">
                 <ContentControl.ContentTemplate>
                     <DataTemplate>
@@ -162,68 +166,40 @@
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Filtres période -->
                                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
-                                    <TextBlock Text="Afficher:" 
-                                               Foreground="White" 
-                                               FontSize="14" 
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,10,0"/>
+                                    <TextBlock Text="Afficher:" Foreground="White" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
                                     <ComboBox ItemsSource="{Binding DataContext.StandingPeriods, RelativeSource={RelativeSource AncestorType=Window}}"
-                                              SelectedItem="{Binding DataContext.SelectedStandingPeriod, RelativeSource={RelativeSource AncestorType=Window}}"
-                                              Width="200"
-                                              Height="35"
-                                              FontSize="14"/>
+                                  SelectedItem="{Binding DataContext.SelectedStandingPeriod, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  Width="150" Height="35" FontSize="14" Margin="0,0,10,0"/>
 
-                                    <ComboBox ItemsSource="{Binding StandingPeriodOptions}"
-          SelectedItem="{Binding SelectedStandingPeriod}"
-          Width="150" Margin="10,0"/>
-
-                                    <ComboBox ItemsSource="{Binding AvailablePeriods}"
-          SelectedItem="{Binding SelectedPeriod}"
-          Width="150" Margin="10,0">
-                                        <ComboBox.Style>
-                                            <Style TargetType="ComboBox">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding AvailablePeriods.Count}" Value="0">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding AvailablePeriods.Count}" Value="1">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
+                                    <ComboBox ItemsSource="{Binding DataContext.AvailablePeriods, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding DataContext.SelectedPeriod, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  Width="200" Height="40" FontSize="14"
+                                  Background="#0f3460" Foreground="White"
+                                  BorderBrush="#00ff88" BorderThickness="2">
+                                        <ComboBox.ItemContainerStyle>
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="Foreground" Value="Black"/>
                                             </Style>
-                                        </ComboBox.Style>
+                                        </ComboBox.ItemContainerStyle>
                                     </ComboBox>
                                 </StackPanel>
 
-                                <!-- DataGrid Classement -->
-                                <DataGrid Grid.Row="1"
-                                          ItemsSource="{Binding DataContext.Standings, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          AutoGenerateColumns="False"
-                                          CanUserAddRows="False"
-                                          IsReadOnly="True"
-                                          Background="Transparent"
-                                          BorderThickness="0"
-                                          GridLinesVisibility="Horizontal"
-                                          HorizontalGridLinesBrush="#16213e"
-                                          RowBackground="#0f3460"
-                                          AlternatingRowBackground="#16213e"
-                                          Foreground="White"
-                                          FontSize="14">
-
+                                <DataGrid Grid.Row="1" ItemsSource="{Binding DataContext.Standings, RelativeSource={RelativeSource AncestorType=Window}}"
+                              AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                              Background="Transparent" BorderThickness="0"
+                              GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#16213e"
+                              RowBackground="#0f3460" AlternatingRowBackground="#16213e"
+                              Foreground="White" FontSize="14">
                                     <DataGrid.ColumnHeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
                                             <Setter Property="Background" Value="#16213e"/>
                                             <Setter Property="Foreground" Value="#00ff88"/>
                                             <Setter Property="FontWeight" Value="Bold"/>
                                             <Setter Property="Padding" Value="12"/>
-                                            <Setter Property="BorderThickness" Value="0,0,0,2"/>
-                                            <Setter Property="BorderBrush" Value="#00ff88"/>
                                         </Style>
                                     </DataGrid.ColumnHeaderStyle>
-
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Pos" Binding="{Binding CurrentPosition}" Width="60"/>
                                         <DataGridTextColumn Header="Joueur" Binding="{Binding Player.Name}" Width="2*"/>
@@ -253,23 +229,30 @@
 
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
                                     <StackPanel>
-                                        <!-- Sélecteur joueur -->
                                         <Grid Margin="0,0,0,20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="200"/>
                                             </Grid.ColumnDefinitions>
-
                                             <TextBlock Text="Joueur :" VerticalAlignment="Center" Foreground="White" FontSize="14" Margin="0,0,10,0"/>
-                                            <ComboBox Grid.Column="1" ItemsSource="{Binding StatsPlayerList}" SelectedItem="{Binding SelectedStatsPlayer}" 
-                      Height="40" FontSize="14"/>
+                                            <ComboBox Grid.Column="1" 
+                                          ItemsSource="{Binding DataContext.StatsPlayerList, RelativeSource={RelativeSource AncestorType=Window}}"
+                                          SelectedItem="{Binding DataContext.SelectedStatsPlayer, RelativeSource={RelativeSource AncestorType=Window}}"
+                                          Height="40" FontSize="14"
+                                          Background="#0f3460" Foreground="White"
+                                          BorderBrush="#00ff88" BorderThickness="2">
+                                                <ComboBox.ItemContainerStyle>
+                                                    <Style TargetType="ComboBoxItem">
+                                                        <Setter Property="Foreground" Value="Black"/>
+                                                    </Style>
+                                                </ComboBox.ItemContainerStyle>
+                                            </ComboBox>
                                         </Grid>
 
-                                        <!-- Stats globales (si "Tous") -->
-                                        <DataGrid ItemsSource="{Binding PlayerStatistics}" AutoGenerateColumns="False"
-                  Visibility="{Binding DetailedStats, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}"
-                  Background="#16213e" RowBackground="#16213e" AlternatingRowBackground="#1a2742"
-                  GridLinesVisibility="Horizontal" HeadersVisibility="Column" IsReadOnly="True">
+                                        <DataGrid ItemsSource="{Binding DataContext.PlayerStatistics, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                      AutoGenerateColumns="False"
+                                      Background="#16213e" RowBackground="#16213e" AlternatingRowBackground="#1a2742"
+                                      GridLinesVisibility="Horizontal" HeadersVisibility="Column" IsReadOnly="True">
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="Joueur" Binding="{Binding PlayerName}" Width="*"/>
                                                 <DataGridTextColumn Header="Manches" Binding="{Binding MatchesPlayed}" Width="80"/>
@@ -281,47 +264,6 @@
                                                 <DataGridTextColumn Header="Bounties" Binding="{Binding TotalBounties}" Width="80"/>
                                             </DataGrid.Columns>
                                         </DataGrid>
-
-                                        <!-- Stats détaillées (si joueur sélectionné) -->
-                                        <StackPanel Visibility="{Binding DetailedStats, Converter={StaticResource NullToVisibilityConverter}}">
-                                            <TextBlock Text="{Binding DetailedStats.PlayerName}" FontSize="28" FontWeight="Bold" 
-                       Foreground="#00ff88" Margin="0,0,0,20"/>
-
-                                            <!-- Carte général -->
-                                            <Border Background="#16213e" CornerRadius="8" Padding="20" Margin="0,0,0,15">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition/>
-                                                        <ColumnDefinition/>
-                                                        <ColumnDefinition/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <StackPanel>
-                                                        <TextBlock Text="Classement" Foreground="#a0a0a0" FontSize="12"/>
-                                                        <TextBlock Text="{Binding DetailedStats.CurrentRank, StringFormat={}#{0}}" 
-                                   Foreground="White" FontSize="32" FontWeight="Bold"/>
-                                                        <TextBlock Text="{Binding DetailedStats.Trend}" FontSize="20"/>
-                                                    </StackPanel>
-
-                                                    <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="Points" Foreground="#a0a0a0" FontSize="12"/>
-                                                        <TextBlock Text="{Binding DetailedStats.TotalPoints}" 
-                                   Foreground="#00ff88" FontSize="32" FontWeight="Bold"/>
-                                                        <TextBlock Text="{Binding DetailedStats.AveragePoints, StringFormat={}{0:N1} /manche}" 
-                                   Foreground="#a0a0a0" FontSize="12"/>
-                                                    </StackPanel>
-
-                                                    <StackPanel Grid.Column="2">
-                                                        <TextBlock Text="Manches jouées" Foreground="#a0a0a0" FontSize="12"/>
-                                                        <TextBlock Text="{Binding DetailedStats.MatchesPlayed}" 
-                                   Foreground="White" FontSize="32" FontWeight="Bold"/>
-                                                    </StackPanel>
-                                                </Grid>
-                                            </Border>
-
-                                            <!-- Reste des stats... ajoute autant de cartes que nécessaire -->
-
-                                        </StackPanel>
                                     </StackPanel>
                                 </ScrollViewer>
                             </Grid>
@@ -338,27 +280,19 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Grid.Style>
-
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <DataGrid Grid.Row="0"
-                                          ItemsSource="{Binding DataContext.Matches, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          SelectedItem="{Binding DataContext.SelectedMatch, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          AutoGenerateColumns="False"
-                                          CanUserAddRows="False"
-                                          IsReadOnly="True"
-                                          Background="Transparent"
-                                          BorderThickness="0"
-                                          GridLinesVisibility="Horizontal"
-                                          HorizontalGridLinesBrush="#16213e"
-                                          RowBackground="#0f3460"
-                                          AlternatingRowBackground="#16213e"
-                                          Foreground="White"
-                                          FontSize="14">
-
+                                <DataGrid Grid.Row="0" 
+                              ItemsSource="{Binding DataContext.Matches, RelativeSource={RelativeSource AncestorType=Window}}" 
+                              SelectedItem="{Binding DataContext.SelectedMatch, RelativeSource={RelativeSource AncestorType=Window}}"
+                              AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                              Background="Transparent" BorderThickness="0"
+                              GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#16213e"
+                              RowBackground="#0f3460" AlternatingRowBackground="#16213e"
+                              Foreground="White" FontSize="14">
                                     <DataGrid.ColumnHeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
                                             <Setter Property="Background" Value="#16213e"/>
@@ -367,7 +301,6 @@
                                             <Setter Property="Padding" Value="12"/>
                                         </Style>
                                     </DataGrid.ColumnHeaderStyle>
-
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="#" Binding="{Binding MatchNumber}" Width="60"/>
                                         <DataGridTextColumn Header="Date" Binding="{Binding MatchDate, StringFormat=dd/MM/yyyy}" Width="*"/>
@@ -376,15 +309,10 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
 
-                                <Button Grid.Row="1"
-                                        Content="📋 Voir détails de la manche"
-                                        Command="{Binding DataContext.ViewMatchDetailsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        HorizontalAlignment="Right"
-                                        Margin="0,15,0,0"
-                                        Padding="20,10"
-                                        Background="#00ff88"
-                                        Foreground="#1a1a2e"
-                                        FontWeight="Bold"/>
+                                <Button Grid.Row="1" Content="📋 Voir détails de la manche"
+                            Command="{Binding DataContext.ViewMatchDetailsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            HorizontalAlignment="Right" Margin="0,15,0,0" Padding="20,10"
+                            Background="#00ff88" Foreground="#1a1a2e" FontWeight="Bold"/>
                             </Grid>
 
                             <!-- ONGLET 4 : JOUEURS -->
@@ -393,87 +321,52 @@
                                     <Style TargetType="Grid">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding}" Value="3">
+                                            <DataTrigger Binding="{Binding DataContext.SelectedTabIndex}" Value="3">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Grid.Style>
-
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Recherche -->
                                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
-                                    <TextBox Text="{Binding DataContext.PlayerSearchText, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}"
-                                             Width="300"
-                                             Height="40"
-                                             Background="#16213e"
-                                             Foreground="White"
-                                             BorderBrush="#00ff88"
-                                             BorderThickness="1"
-                                             Padding="10"
-                                             FontSize="14"
-                                             VerticalContentAlignment="Center"/>
-                                    <Button Content="🔍 Rechercher"
-                                            Command="{Binding DataContext.SearchPlayersCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            Margin="10,0,0,0"
-                                            Padding="15,10"
-                                            Background="#00ff88"
-                                            Foreground="#1a1a2e"
-                                            FontWeight="Bold"/>
+                                    <TextBox Text="{Binding DataContext.PlayerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="300" Height="40"
+                                 Background="#16213e" Foreground="White"
+                                 BorderBrush="#00ff88" BorderThickness="1"
+                                 Padding="10" FontSize="14" VerticalContentAlignment="Center"/>
+                                    <Button Content="🔍 Rechercher" Command="{Binding DataContext.SearchPlayersCommand}"
+                                Margin="10,0,0,0" Padding="15,10"
+                                Background="#00ff88" Foreground="#1a1a2e" FontWeight="Bold"/>
                                 </StackPanel>
 
-                                <!-- Liste joueurs -->
-                                <ListBox Grid.Row="1"
-                                         ItemsSource="{Binding DataContext.Players, RelativeSource={RelativeSource AncestorType=Window}}"
-                                         SelectedItem="{Binding DataContext.SelectedPlayer, RelativeSource={RelativeSource AncestorType=Window}}"
-                                         Background="Transparent"
-                                         BorderThickness="0"
-                                         FontSize="14">
+                                <ListBox Grid.Row="1" ItemsSource="{Binding DataContext.Players}" SelectedItem="{Binding DataContext.SelectedPlayer}"
+                             Background="Transparent" BorderThickness="0" FontSize="14">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#16213e"
-                                                    CornerRadius="8"
-                                                    Padding="15"
-                                                    Margin="0,5">
+                                            <Border Background="#16213e" CornerRadius="8" Padding="15" Margin="0,5">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="60"/>
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
-
-                                                    <TextBlock Grid.Column="0" 
-                                                               Text="{Binding CurrentPosition}"
-                                                               FontSize="24"
-                                                               FontWeight="Bold"
-                                                               Foreground="#00ff88"
-                                                               VerticalAlignment="Center"/>
-
+                                                    <TextBlock Text="{Binding DataContext.CurrentPosition}" FontSize="24" FontWeight="Bold"
+                                                   Foreground="#00ff88" VerticalAlignment="Center"/>
                                                     <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="{Binding Player.Name}"
-                                                                   FontSize="16"
-                                                                   FontWeight="Bold"
-                                                                   Foreground="White"/>
+                                                        <TextBlock Text="{Binding DataContext.Player.Name}" FontSize="16" FontWeight="Bold" Foreground="White"/>
                                                         <TextBlock Foreground="Gray" FontSize="12">
-                                                            <Run Text="{Binding TotalPoints}"/>
-                                                            <Run Text="pts •"/>
-                                                            <Run Text="{Binding MatchesPlayed}"/>
-                                                            <Run Text="manches •"/>
-                                                            <Run Text="{Binding Victories}"/>
-                                                            <Run Text="victoires"/>
+                                                <Run Text="{Binding DataContext.TotalPoints}"/> <Run Text="pts •"/>
+                                                <Run Text="{Binding DataContext.MatchesPlayed}"/> <Run Text="manches •"/>
+                                                <Run Text="{Binding DataContext.Victories}"/> <Run Text="victoires"/>
                                                         </TextBlock>
                                                     </StackPanel>
-
-                                                    <Button Grid.Column="2"
-                                                            Content="📊 Détails"
-                                                            Command="{Binding DataContext.ViewPlayerDetailsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                            Background="#0f3460"
-                                                            Foreground="White"
-                                                            Padding="10,5"/>
+                                                    <Button Grid.Column="2" Content="📊 Détails"
+                                                Command="{Binding DataContext.ViewPlayerDetailsCommand, RelativeSource={RelativeSource AncestorType=Grid}}"
+                                                Background="#0f3460" Foreground="White" Padding="10,5"/>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -487,63 +380,38 @@
                                     <Style TargetType="Grid">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding}" Value="4">
+                                            <DataTrigger Binding="{Binding DataContext.SelectedTabIndex}" Value="4">
                                                 <Setter Property="Visibility" Value="Visible"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Grid.Style>
-
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <!-- Filtres -->
-                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
-                                    <TextBlock Text="Filtrer:" 
-                                               Foreground="White" 
-                                               FontSize="14" 
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,10,0"/>
-                                    <ComboBox ItemsSource="{Binding DataContext.LogActions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                              SelectedItem="{Binding DataContext.LogFilterAction, RelativeSource={RelativeSource AncestorType=Window}}"
-                                              Width="250"
-                                              Height="35"
-                                              FontSize="14"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <TextBlock Text="Filtrer:" Foreground="White" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <ComboBox ItemsSource="{Binding DataContext.LogActions}" SelectedItem="{Binding DataContext.LogFilterAction}"
+                                  Width="250" Height="35" FontSize="14"/>
                                 </StackPanel>
 
-                                <!-- Liste logs -->
-                                <ListBox Grid.Row="1"
-                                         ItemsSource="{Binding DataContext.Logs, RelativeSource={RelativeSource AncestorType=Window}}"
-                                         Background="Transparent"
-                                         BorderThickness="0"
-                                         FontSize="13">
+                                <ListBox Grid.Row="1" ItemsSource="{Binding DataContext.Logs}"
+                             Background="Transparent" BorderThickness="0" FontSize="13">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#16213e"
-                                                    CornerRadius="5"
-                                                    Padding="12"
-                                                    Margin="0,3">
+                                            <Border Background="#16213e" CornerRadius="5" Padding="12" Margin="0,3">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="150"/>
                                                         <ColumnDefinition Width="*"/>
                                                     </Grid.ColumnDefinitions>
-
-                                                    <TextBlock Grid.Column="0" 
-                                                               Text="{Binding Timestamp, StringFormat=dd/MM/yyyy HH:mm:ss}"
-                                                               Foreground="Gray"
-                                                               FontSize="12"/>
-
+                                                    <TextBlock Text="{Binding DataContext.Timestamp, StringFormat=dd/MM/yyyy HH:mm:ss}"
+                                                   Foreground="Gray" FontSize="12"/>
                                                     <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="{Binding Action}"
-                                                                   FontWeight="Bold"
-                                                                   Foreground="#00ff88"/>
-                                                        <TextBlock Text="{Binding Description}"
-                                                                   Foreground="White"
-                                                                   TextWrapping="Wrap"
-                                                                   Margin="0,3,0,0"/>
+                                                        <TextBlock Text="{Binding DataContext.Action}" FontWeight="Bold" Foreground="#00ff88"/>
+                                                        <TextBlock Text="{Binding DataContext.Description}" Foreground="White" TextWrapping="Wrap" Margin="0,3,0,0"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
