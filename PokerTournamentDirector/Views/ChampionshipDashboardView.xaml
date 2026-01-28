@@ -229,13 +229,157 @@
 
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Text="📊 Statistiques complètes - Tous les tournois de la saison"
                FontSize="20" FontWeight="Bold" Foreground="#00ff88" Margin="0,0,0,15"/>
 
-                                <DataGrid Grid.Row="1"
+                                <!-- STATS INSOLITES -->
+                                <Border Grid.Row="1" Background="#16213e" CornerRadius="10" Padding="20" Margin="0,0,0,20">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Text="🏆 Stats Insolites" FontSize="18" FontWeight="Bold" Foreground="#ffb703" Margin="0,0,0,15"/>
+
+                                        <UniformGrid Grid.Row="1" Columns="4" Rows="2">
+                                            <!-- Le Sniper -->
+                                            <Border Background="#0f3460" CornerRadius="8" Padding="15" Margin="5">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding DataContext.SniperStat.Emoji, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                   FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="Le Sniper" FontSize="14" FontWeight="Bold" Foreground="#00ff88" HorizontalAlignment="Center"/>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="White" FontSize="12" Margin="0,5,0,0">
+                            <Run Text="{Binding DataContext.SniperStat.Players, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="#a0a0a0" FontSize="11">
+                            <Run Text="{Binding DataContext.SniperStat.Value, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Run Text="{Binding DataContext.SniperStat.Unit, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Le Touriste -->
+                                            <Border Background="#0f3460" CornerRadius="8" Padding="15" Margin="5">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding DataContext.TouristeStat.Emoji, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                   FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="Le Touriste" FontSize="14" FontWeight="Bold" Foreground="#00ff88" HorizontalAlignment="Center"/>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="White" FontSize="12" Margin="0,5,0,0">
+                            <Run Text="{Binding DataContext.TouristeStat.Players, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="#a0a0a0" FontSize="11">
+                            <Run Text="{Binding DataContext.TouristeStat.Value, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Run Text="{Binding DataContext.TouristeStat.Unit, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Le Taulier -->
+                                            <Border Background="#0f3460" CornerRadius="8" Padding="15" Margin="5">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding DataContext.TaulierStat.Emoji, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                   FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="Le Taulier" FontSize="14" FontWeight="Bold" Foreground="#00ff88" HorizontalAlignment="Center"/>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="White" FontSize="12" Margin="0,5,0,0">
+                            <Run Text="{Binding DataContext.TaulierStat.Players, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="#a0a0a0" FontSize="11">
+                            <Run Text="{Binding DataContext.TaulierStat.Value, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Run Text="{Binding DataContext.TaulierStat.Unit, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Le Boss -->
+                                            <Border Background="#0f3460" CornerRadius="8" Padding="15" Margin="5">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding DataContext.BossStat.Emoji, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                   FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="Le Boss" FontSize="14" FontWeight="Bold" Foreground="#00ff88" HorizontalAlignment="Center"/>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="White" FontSize="12" Margin="0,5,0,0">
+                            <Run Text="{Binding DataContext.BossStat.Players, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="#a0a0a0" FontSize="11">
+                            <Run Text="{Binding DataContext.BossStat.Value, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Run Text="{Binding DataContext.BossStat.Unit, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- La Marche -->
+                                            <Border Background="#0f3460" CornerRadius="8" Padding="15" Margin="5">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding DataContext.MarcheStat.Emoji, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                   FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="La Marche" FontSize="14" FontWeight="Bold" Foreground="#00ff88" HorizontalAlignment="Center"/>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="White" FontSize="12" Margin="0,5,0,0">
+                            <Run Text="{Binding DataContext.MarcheStat.Players, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="#a0a0a0" FontSize="11">
+                            <Run Text="{Binding DataContext.MarcheStat.Value, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Run Text="{Binding DataContext.MarcheStat.Unit, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Le Pilier -->
+                                            <Border Background="#0f3460" CornerRadius="8" Padding="15" Margin="5">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding DataContext.PilierStat.Emoji, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                   FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="Le Pilier" FontSize="14" FontWeight="Bold" Foreground="#00ff88" HorizontalAlignment="Center"/>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="White" FontSize="12" Margin="0,5,0,0">
+                            <Run Text="{Binding DataContext.PilierStat.Players, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="#a0a0a0" FontSize="11">
+                            <Run Text="{Binding DataContext.PilierStat.Value, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Run Text="{Binding DataContext.PilierStat.Unit, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Le Reg -->
+                                            <Border Background="#0f3460" CornerRadius="8" Padding="15" Margin="5">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding DataContext.RegStat.Emoji, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                   FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="Le Reg" FontSize="14" FontWeight="Bold" Foreground="#00ff88" HorizontalAlignment="Center"/>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="White" FontSize="12" Margin="0,5,0,0">
+                            <Run Text="{Binding DataContext.RegStat.Players, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="#a0a0a0" FontSize="11">
+                            <Run Text="{Binding DataContext.RegStat.Value, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Run Text="{Binding DataContext.RegStat.Unit, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Le ROI Maker -->
+                                            <Border Background="#0f3460" CornerRadius="8" Padding="15" Margin="5">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding DataContext.RoiMakerStat.Emoji, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                   FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="Le ROI Maker" FontSize="14" FontWeight="Bold" Foreground="#00ff88" HorizontalAlignment="Center"/>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="White" FontSize="12" Margin="0,5,0,0">
+                            <Run Text="{Binding DataContext.RoiMakerStat.Players, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                    <TextBlock HorizontalAlignment="Center" Foreground="#a0a0a0" FontSize="11">
+                            <Run Text="{Binding DataContext.RoiMakerStat.Value, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Run Text="{Binding DataContext.RoiMakerStat.Unit, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+                                        </UniformGrid>
+                                    </Grid>
+                                </Border>
+
+                                <!-- TABLEAU STATS -->
+                                <DataGrid Grid.Row="2"
               ItemsSource="{Binding DataContext.CompleteStats, RelativeSource={RelativeSource AncestorType=Window}}"
               AutoGenerateColumns="False"
               CanUserAddRows="False"

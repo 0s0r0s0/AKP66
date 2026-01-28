@@ -49,6 +49,31 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty]
         private ObservableCollection<PlayerCompleteStat> _completeStats = new();
 
+        // === Statistiques insolites ===
+        [ObservableProperty]
+        private InsoliteStat? _sniperStat;
+
+        [ObservableProperty]
+        private InsoliteStat? _touristeStat;
+
+        [ObservableProperty]
+        private InsoliteStat? _taulierStat;
+
+        [ObservableProperty]
+        private InsoliteStat? _bossStat;
+
+        [ObservableProperty]
+        private InsoliteStat? _marcheStat;
+
+        [ObservableProperty]
+        private InsoliteStat? _pilierStat;
+
+        [ObservableProperty]
+        private InsoliteStat? _regStat;
+
+        [ObservableProperty]
+        private InsoliteStat? _roiMakerStat;
+
         // === MANCHES ===
         [ObservableProperty]
         private ObservableCollection<ChampionshipMatch> _matches = new();
@@ -103,6 +128,7 @@ namespace PokerTournamentDirector.ViewModels
             await LoadMatchesAsync();
             await LoadLogsAsync();
             await LoadCompleteStatsAsync();
+            await LoadInsolitesAsync();
         }
 
         private async Task LoadChampionshipAsync()
@@ -532,6 +558,135 @@ namespace PokerTournamentDirector.ViewModels
             return performances;
         }
 
+        // === STATISTIQUES INSOLITES ===
+
+        [RelayCommand]
+        private async Task LoadInsolitesAsync()
+        {
+            if (Championship == null || !CompleteStats.Any()) return;
+
+            var playerData = new Dictionary<int, PlayerInsolitData>();
+
+            // Collecter toutes les données nécessaires
+            foreach (var standing in Championship.Standings.Where(s => s.IsActive))
+            {
+                var matches = await _context.ChampionshipMatches
+                    .Where(m => m.ChampionshipId == _championshipId)
+                    .Include(m => m.Tournament)
+                    .ToListAsync();
+
+                int totalMinutes = 0;
+                int tournamentsPlayed = 0;
+                int victories = 0;
+                int secondPlaces = 0;
+                int finalTables = 0;
+                int totalBounties = 0;
+                int totalPoints = 0;
+
+                foreach (var match in matches)
+                {
+                    var tp = await _context.TournamentPlayers
+                        .FirstOrDefaultAsync(t => t.TournamentId == match.TournamentId && t.PlayerId == standing.PlayerId);
+
+                    if (tp != null && tp.FinishPosition.HasValue)
+                    {
+                        tournamentsPlayed++;
+
+                        // Temps de jeu (approximation basée sur position)
+                        var tournament = match.Tournament;
+                        if (tournament?.StartTime != null && tournament.EndTime != null)
+                        {
+                            var duration = (tournament.EndTime.Value - tournament.StartTime.Value).TotalMinutes;
+                            // Temps proportionnel selon position
+                            var totalPlayers = await _context.TournamentPlayers.CountAsync(t => t.TournamentId == match.TournamentId);
+                            var survivalRate = (double)(totalPlayers - tp.FinishPosition.Value + 1) / totalPlayers;
+                            totalMinutes += (int)(duration * survivalRate);
+                        }
+
+                        if (tp.FinishPosition == 1) victories++;
+                        if (tp.FinishPosition == 2) secondPlaces++;
+
+                        // Table finale = Top 9
+                        var playersCount = await _context.TournamentPlayers.CountAsync(t => t.TournamentId == match.TournamentId);
+                        if (tp.FinishPosition <= Math.Min(9, playersCount)) finalTables++;
+
+                        totalBounties += tp.BountyKills;
+
+                        // Calculer points
+                        int basePoints = CalculateMatchPointsForPlayer(Championship, tp.FinishPosition.Value);
+                        basePoints = (int)(basePoints * match.Coefficient);
+                        if (Championship.CountBounties)
+                            basePoints += tp.BountyKills * Championship.PointsPerBounty;
+                        if (tp.FinishPosition == 1 && Championship.VictoryBonus > 0)
+                            basePoints += Championship.VictoryBonus;
+                        if (tp.FinishPosition <= 3 && Championship.Top3Bonus > 0)
+                            basePoints += Championship.Top3Bonus;
+
+                        totalPoints += basePoints;
+                    }
+                }
+
+                if (tournamentsPlayed > 0)
+                {
+                    playerData[standing.PlayerId] = new PlayerInsolitData
+                    {
+                        PlayerId = standing.PlayerId,
+                        PlayerName = standing.Player?.Name ?? "Inconnu",
+                        TotalBounties = totalBounties,
+                        AverageMinutes = totalMinutes / tournamentsPlayed,
+                        TotalMinutes = totalMinutes,
+                        Victories = victories,
+                        SecondPlaces = secondPlaces,
+                        FinalTables = finalTables,
+                        TournamentsPlayed = tournamentsPlayed,
+                        AveragePoints = (double)totalPoints / tournamentsPlayed
+                    };
+                }
+            }
+
+            // Calculer les stats insolites
+            SniperStat = CalculateInsoliteStat(playerData.Values, p => p.TotalBounties, "🎯", "kills");
+            TouristeStat = CalculateInsoliteStat(playerData.Values, p => p.AverageMinutes, "🏖️", "min/tournoi", ascending: true);
+            TaulierStat = CalculateInsoliteStat(playerData.Values, p => p.TotalMinutes, "⏱️", "min");
+            BossStat = CalculateInsoliteStat(playerData.Values, p => p.Victories, "👑", "victoires");
+            MarcheStat = CalculateInsoliteStat(playerData.Values, p => p.SecondPlaces, "🥈", "secondes places");
+            PilierStat = CalculateInsoliteStat(playerData.Values, p => p.FinalTables, "🏛️", "tables finales");
+            RegStat = CalculateInsoliteStat(playerData.Values, p => p.TournamentsPlayed, "🎲", "tournois");
+            RoiMakerStat = CalculateInsoliteStat(playerData.Values, p => p.AveragePoints, "💰", "pts/tournoi");
+        }
+
+        private InsoliteStat CalculateInsoliteStat<T>(IEnumerable<PlayerInsolitData> data, Func<PlayerInsolitData, T> selector, string emoji, string unit, bool ascending = false) where T : IComparable<T>
+        {
+            var ordered = ascending
+                ? data.OrderBy(selector).ToList()
+                : data.OrderByDescending(selector).ToList();
+
+            if (!ordered.Any())
+                return new InsoliteStat { Emoji = emoji, Value = "N/A", Unit = unit };
+
+            var topValue = selector(ordered.First());
+            var topPlayers = ordered.Where(p => selector(p).CompareTo(topValue) == 0).ToList();
+
+            var stat = new InsoliteStat
+            {
+                Emoji = emoji,
+                Unit = unit,
+                Value = topValue is double d ? d.ToString("N1") : topValue.ToString()
+            };
+
+            if (topPlayers.Count <= 3)
+            {
+                stat.Players = string.Join(", ", topPlayers.Select(p => p.PlayerName));
+            }
+            else
+            {
+                stat.Players = $"{topPlayers.Count} joueurs";
+            }
+
+            return stat;
+        }
+
+
         // === MANCHES ===
         [RelayCommand]
         private async Task LoadMatchesAsync()
@@ -816,5 +971,28 @@ namespace PokerTournamentDirector.ViewModels
         public int Bounties { get; set; }
         public int Rebuys { get; set; }
         public decimal Winnings { get; set; }
+    }
+
+    // === Classes stats insolites ===
+    public class PlayerInsolitData
+    {
+        public int PlayerId { get; set; }
+        public string PlayerName { get; set; } = "";
+        public int TotalBounties { get; set; }
+        public int AverageMinutes { get; set; }
+        public int TotalMinutes { get; set; }
+        public int Victories { get; set; }
+        public int SecondPlaces { get; set; }
+        public int FinalTables { get; set; }
+        public int TournamentsPlayed { get; set; }
+        public double AveragePoints { get; set; }
+    }
+
+    public class InsoliteStat
+    {
+        public string Emoji { get; set; } = "";
+        public string Players { get; set; } = "";
+        public string Value { get; set; } = "";
+        public string Unit { get; set; } = "";
     }
 }
