@@ -35,6 +35,7 @@
         <converters:KillCountToColorConverter x:Key="KillCountToColorConverter"/>
         <converters:MultiplyBy2Converter x:Key="MultiplyBy2Converter"/>
         <converters:StartingStackToBBConverter x:Key="StartingStackToBBConverter"/>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         
         <!-- Easing doux et naturel pour les animations -->
         <SineEase x:Key="SineEaseInOut" EasingMode="EaseInOut"/>

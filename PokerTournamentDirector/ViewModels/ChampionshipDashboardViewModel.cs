@@ -16,161 +16,130 @@ using System.Threading.Tasks;
 
 namespace PokerTournamentDirector.ViewModels
 {
-    public partial class ChampionshipDashboardViewModel : ObservableObject
+    public partial class ChampionshipDashboardViewModel : ObservableObject, IDisposable
     {
         private readonly ChampionshipService _championshipService;
+        private readonly ChampionshipCalculationService _calculationService;
+        private readonly ChampionshipDataLoaderService _dataLoaderService;
         private readonly PokerDbContext _context;
-        private int _championshipId;
+        private readonly int _championshipId;
 
-        [ObservableProperty]
-        private Championship? _championship;
+        [ObservableProperty] private Championship? _championship;
+        [ObservableProperty] private int _selectedTabIndex = 0;
 
-        [ObservableProperty]
-        private int _selectedTabIndex = 0;
+        // Classement
+        [ObservableProperty] private ObservableCollection<ChampionshipStanding> _standings = new();
+        [ObservableProperty] private string _selectedStandingPeriod = "Général";
+        [ObservableProperty] private ObservableCollection<string> _availablePeriods = new();
+        [ObservableProperty] private string? _selectedPeriod;
 
-        // === CLASSEMENT ===
-        [ObservableProperty]
-        private ObservableCollection<ChampionshipStanding> _standings = new();
+        public ObservableCollection<string> StandingPeriods { get; } = new() { "Général", "Mensuel", "Trimestriel" };
 
-        [ObservableProperty]
-        private string _selectedStandingPeriod = "Général";
+        // Statistiques
+        [ObservableProperty] private ObservableCollection<PlayerCompleteStat> _completeStats = new();
+        [ObservableProperty] private InsoliteStat? _sniperStat;
+        [ObservableProperty] private InsoliteStat? _touristeStat;
+        [ObservableProperty] private InsoliteStat? _taulierStat;
+        [ObservableProperty] private InsoliteStat? _bossStat;
+        [ObservableProperty] private InsoliteStat? _marcheStat;
+        [ObservableProperty] private InsoliteStat? _pilierStat;
+        [ObservableProperty] private InsoliteStat? _regStat;
+        [ObservableProperty] private InsoliteStat? _roiMakerStat;
 
-        public ObservableCollection<string> StandingPeriods { get; } = new()
-        {
-            "Général",
-            "Mensuel",
-            "Trimestriel"
-        };
+        // Manches
+        [ObservableProperty] private ObservableCollection<ChampionshipMatch> _matches = new();
+        [ObservableProperty] private ChampionshipMatch? _selectedMatch;
+        [ObservableProperty] private ObservableCollection<MatchPlayerResult> _matchResults = new();
+        [ObservableProperty] private string _matchDetailsTitle = "";
 
-        [ObservableProperty]
-        private ObservableCollection<string> _availablePeriods = new();
+        // Joueurs
+        [ObservableProperty] private ObservableCollection<ChampionshipStanding> _players = new();
+        [ObservableProperty] private ChampionshipStanding? _selectedPlayer;
+        [ObservableProperty] private string _playerSearchText = string.Empty;
 
-        [ObservableProperty]
-        private string? _selectedPeriod;
-
-        // === STATISTIQUES COMPLÈTES ===
-        [ObservableProperty]
-        private ObservableCollection<PlayerCompleteStat> _completeStats = new();
-
-        // === Statistiques insolites ===
-        [ObservableProperty]
-        private InsoliteStat? _sniperStat;
-
-        [ObservableProperty]
-        private InsoliteStat? _touristeStat;
-
-        [ObservableProperty]
-        private InsoliteStat? _taulierStat;
-
-        [ObservableProperty]
-        private InsoliteStat? _bossStat;
-
-        [ObservableProperty]
-        private InsoliteStat? _marcheStat;
-
-        [ObservableProperty]
-        private InsoliteStat? _pilierStat;
-
-        [ObservableProperty]
-        private InsoliteStat? _regStat;
-
-        [ObservableProperty]
-        private InsoliteStat? _roiMakerStat;
-
-        // === MANCHES ===
-        [ObservableProperty]
-        private ObservableCollection<ChampionshipMatch> _matches = new();
-
-        [ObservableProperty]
-        private ChampionshipMatch? _selectedMatch;
-
-        [ObservableProperty]
-        private ObservableCollection<MatchPlayerResult> _matchResults = new();
-
-        [ObservableProperty]
-        private string _matchDetailsTitle = "";
-
-        // === JOUEURS ===
-        [ObservableProperty]
-        private ObservableCollection<ChampionshipStanding> _players = new();
-
-        [ObservableProperty]
-        private ChampionshipStanding? _selectedPlayer;
-
-        [ObservableProperty]
-        private string _playerSearchText = string.Empty;
-
-        // === LOGS ===
-        [ObservableProperty]
-        private ObservableCollection<ChampionshipLog> _logs = new();
-
-        [ObservableProperty]
-        private string _logFilterAction = "Toutes";
+        // Logs
+        [ObservableProperty] private ObservableCollection<ChampionshipLog> _logs = new();
+        [ObservableProperty] private string _logFilterAction = "Toutes";
 
         public ObservableCollection<string> LogActions { get; } = new()
         {
-            "Toutes",
-            "Création/Modification",
-            "Manches",
-            "Joueurs",
-            "Points",
-            "Classements"
+            "Toutes", "Création/Modification", "Manches", "Joueurs", "Points", "Classements"
         };
 
-        public ChampionshipDashboardViewModel(ChampionshipService championshipService, int championshipId)
+        public ChampionshipDashboardViewModel(
+            ChampionshipService championshipService,
+            PokerDbContext context,
+            int championshipId)
         {
             _championshipService = championshipService;
+            _context = context;
             _championshipId = championshipId;
-            _context = new PokerDbContext();
+            _calculationService = new ChampionshipCalculationService();
+            _dataLoaderService = new ChampionshipDataLoaderService(context);
         }
 
         public async Task InitializeAsync()
         {
-            await LoadChampionshipAsync();
-            await LoadStandingsAsync();
-            await LoadMatchesAsync();
-            await LoadLogsAsync();
-            await LoadCompleteStatsAsync();
-            await LoadInsolitesAsync();
+            try
+            {
+                await LoadChampionshipAsync();
+                await LoadStandingsAsync();
+                await LoadMatchesAsync();
+                await LoadLogsAsync();
+                await LoadCompleteStatsAsync();
+                await LoadInsolitesAsync();
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur initialisation : {ex.Message}");
+            }
         }
 
         private async Task LoadChampionshipAsync()
         {
             Championship = await _championshipService.GetChampionshipAsync(_championshipId);
-
             if (Championship != null && Championship.Matches.Any())
             {
                 OnSelectedStandingPeriodChanged("Général");
             }
         }
 
-        // === CLASSEMENT ===
         [RelayCommand]
         private async Task LoadStandingsAsync()
         {
-            if (Championship == null) return;
-
-            await FilterStandingsByPeriodAsync();
+            try
+            {
+                if (Championship == null) return;
+                await FilterStandingsByPeriodAsync();
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur chargement classements : {ex.Message}");
+            }
         }
 
         [RelayCommand]
         private async Task RefreshStandingsAsync()
         {
-            await _championshipService.RecalculateStandingsAsync(_championshipId);
-            Championship = await _championshipService.GetChampionshipAsync(_championshipId);
-            await LoadStandingsAsync();
-            CustomMessageBox.ShowSuccess("Classements recalculés !", "Succès");
+            try
+            {
+                await _championshipService.RecalculateStandingsAsync(_championshipId);
+                Championship = await _championshipService.GetChampionshipAsync(_championshipId);
+                await LoadStandingsAsync();
+                await LoadCompleteStatsAsync();
+                await LoadInsolitesAsync();
+                CustomMessageBox.ShowSuccess("Classements recalculés !", "Succès");
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur recalcul : {ex.Message}");
+            }
         }
 
         [RelayCommand]
         private async Task RefreshDataAsync()
         {
-            Championship = await _championshipService.GetChampionshipAsync(_championshipId);
-            await LoadStandingsAsync();
-            await LoadMatchesAsync();
-            await LoadLogsAsync();
-            await LoadCompleteStatsAsync();
-            OnSelectedStandingPeriodChanged(SelectedStandingPeriod);
+            await InitializeAsync();
         }
 
         partial void OnSelectedStandingPeriodChanged(string value)
@@ -227,52 +196,67 @@ namespace PokerTournamentDirector.ViewModels
 
         private async Task FilterStandingsByPeriodAsync()
         {
-            if (Championship == null) return;
-
-            Standings.Clear();
-
-            if (SelectedStandingPeriod == "Général")
+            try
             {
-                var allStandings = Championship.Standings
-                    .Where(s => s.IsActive)
-                    .OrderBy(s => s.CurrentPosition)
+                if (Championship == null) return;
+
+                Standings.Clear();
+
+                if (SelectedStandingPeriod == "Général")
+                {
+                    var allStandings = Championship.Standings
+                        .Where(s => s.IsActive)
+                        .OrderBy(s => s.CurrentPosition)
+                        .ToList();
+
+                    foreach (var s in allStandings)
+                        Standings.Add(s);
+                    return;
+                }
+
+                if (string.IsNullOrEmpty(SelectedPeriod)) return;
+
+                var (startDate, endDate) = GetPeriodDates();
+
+                var periodMatches = Championship.Matches
+                    .Where(m => m.MatchDate >= startDate && m.MatchDate <= endDate)
                     .ToList();
 
-                foreach (var s in allStandings)
-                    Standings.Add(s);
-                return;
+                var playerStats = await BuildPeriodStatsAsync(periodMatches);
+                ApplyCountingRules(playerStats);
+                PopulateStandingsFromStats(playerStats);
             }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur filtrage : {ex.Message}");
+            }
+        }
 
-            if (string.IsNullOrEmpty(SelectedPeriod)) return;
-
-            DateTime startDate, endDate;
-
+        private (DateTime start, DateTime end) GetPeriodDates()
+        {
             if (SelectedStandingPeriod == "Mensuel")
             {
-                var parts = SelectedPeriod.Split(' ');
+                var parts = SelectedPeriod!.Split(' ');
                 int month = GetMonthNumber(parts[0]);
                 int year = int.Parse(parts[1]);
-                startDate = new DateTime(year, month, 1);
-                endDate = startDate.AddMonths(1).AddDays(-1);
+                var start = new DateTime(year, month, 1);
+                return (start, start.AddMonths(1).AddDays(-1));
             }
             else if (SelectedStandingPeriod == "Trimestriel")
             {
-                var parts = SelectedPeriod.Split(' ');
+                var parts = SelectedPeriod!.Split(' ');
                 int quarter = int.Parse(parts[0].Replace("Q", ""));
                 int year = int.Parse(parts[1]);
                 int startMonth = (quarter - 1) * 3 + 1;
-                startDate = new DateTime(year, startMonth, 1);
-                endDate = startDate.AddMonths(3).AddDays(-1);
-            }
-            else
-            {
-                return;
+                var start = new DateTime(year, startMonth, 1);
+                return (start, start.AddMonths(3).AddDays(-1));
             }
 
-            var periodMatches = Championship.Matches
-                .Where(m => m.MatchDate >= startDate && m.MatchDate <= endDate)
-                .ToList();
+            return (DateTime.MinValue, DateTime.MaxValue);
+        }
 
+        private async Task<Dictionary<int, PeriodStanding>> BuildPeriodStatsAsync(List<ChampionshipMatch> periodMatches)
+        {
             var playerStats = new Dictionary<int, PeriodStanding>();
 
             foreach (var match in periodMatches)
@@ -294,13 +278,11 @@ namespace PokerTournamentDirector.ViewModels
                     }
 
                     var stat = playerStats[tp.PlayerId];
-
-                    // CORRECTION : Calculer TOUS les points (base + bonus + malus) IMMÉDIATEMENT
-                    int totalMatchPoints = CalculateFullMatchPoints(Championship, match, tp);
+                    int totalMatchPoints = _calculationService.CalculateFullMatchPoints(Championship!, match, tp);
 
                     stat.Performances.Add(new PeriodPerformance
                     {
-                        Points = totalMatchPoints, // Points COMPLETS avec tout
+                        Points = totalMatchPoints,
                         Position = tp.FinishPosition.Value,
                         Bounties = tp.BountyKills,
                         Winnings = tp.Winnings ?? 0
@@ -314,23 +296,22 @@ namespace PokerTournamentDirector.ViewModels
                 }
             }
 
-            // Appliquer BestXPerMonth / BestXPerQuarter SUR LES POINTS COMPLETS
+            return playerStats;
+        }
+
+        private void ApplyCountingRules(Dictionary<int, PeriodStanding> playerStats)
+        {
+            int? bestX = null;
+
+            if (SelectedStandingPeriod == "Mensuel" && Championship!.BestXPerMonth.HasValue)
+                bestX = Championship.BestXPerMonth.Value;
+            else if (SelectedStandingPeriod == "Trimestriel" && Championship!.BestXPerQuarter.HasValue)
+                bestX = Championship.BestXPerQuarter.Value;
+
             foreach (var stat in playerStats.Values)
             {
-                int? bestX = null;
-
-                if (SelectedStandingPeriod == "Mensuel" && Championship.BestXPerMonth.HasValue)
-                {
-                    bestX = Championship.BestXPerMonth.Value;
-                }
-                else if (SelectedStandingPeriod == "Trimestriel" && Championship.BestXPerQuarter.HasValue)
-                {
-                    bestX = Championship.BestXPerQuarter.Value;
-                }
-
                 if (bestX.HasValue && stat.Performances.Count > bestX.Value)
                 {
-                    // CORRECTION : Trie par Points COMPLETS (avec bounties déjà inclus)
                     var bestPerfs = stat.Performances
                         .OrderByDescending(p => p.Points)
                         .Take(bestX.Value)
@@ -345,7 +326,10 @@ namespace PokerTournamentDirector.ViewModels
                     stat.AveragePosition = stat.Performances.Any() ? stat.Performances.Average(p => (double)p.Position) : 0;
                 }
             }
+        }
 
+        private void PopulateStandingsFromStats(Dictionary<int, PeriodStanding> playerStats)
+        {
             var orderedStats = playerStats.Values.OrderByDescending(s => s.TotalPoints).ToList();
             for (int i = 0; i < orderedStats.Count; i++)
             {
@@ -367,302 +351,146 @@ namespace PokerTournamentDirector.ViewModels
             }
         }
 
-        private int CalculateFullMatchPoints(Championship championship, ChampionshipMatch match, TournamentPlayer tp)
-        {
-            // Points de base selon le système choisi
-            int basePoints = CalculateMatchPointsForPlayer(championship, tp.FinishPosition.Value);
-
-            // Coefficient de manche
-            basePoints = (int)(basePoints * match.Coefficient);
-
-            // Bonus bounties
-            if (championship.CountBounties)
-            {
-                basePoints += tp.BountyKills * championship.PointsPerBounty;
-            }
-
-            // Bonus victoire
-            if (tp.FinishPosition == 1 && championship.VictoryBonus > 0)
-            {
-                basePoints += championship.VictoryBonus;
-            }
-
-            // Bonus top 3
-            if (tp.FinishPosition <= 3 && championship.Top3Bonus > 0)
-            {
-                basePoints += championship.Top3Bonus;
-            }
-
-            // Pénalité recaves
-            if (tp.RebuyCount > 0)
-            {
-                basePoints -= tp.RebuyCount * championship.RebuyPointsPenalty;
-                basePoints = (int)(basePoints * championship.RebuyPointsMultiplier);
-            }
-
-            return basePoints;
-        }
-        private class PeriodStanding
-        {
-            public int PlayerId { get; set; }
-            public string PlayerName { get; set; } = "";
-            public int MatchesPlayed { get; set; }
-            public int TotalPoints { get; set; }
-            public int Victories { get; set; }
-            public int Top3 { get; set; }
-            public int TotalBounties { get; set; }
-            public decimal TotalWinnings { get; set; }
-            public double AveragePosition { get; set; }
-            public List<PeriodPerformance> Performances { get; set; } = new();
-        }
-
-        private class PeriodPerformance
-        {
-            public int Points { get; set; }
-            public int Position { get; set; }
-            public int Bounties { get; set; }
-            public decimal Winnings { get; set; }
-        }
-
-        private string GetMonthName(int month) => month switch
-        {
-            1 => "Janvier",
-            2 => "Février",
-            3 => "Mars",
-            4 => "Avril",
-            5 => "Mai",
-            6 => "Juin",
-            7 => "Juillet",
-            8 => "Août",
-            9 => "Septembre",
-            10 => "Octobre",
-            11 => "Novembre",
-            12 => "Décembre",
-            _ => ""
-        };
-
-        private int GetMonthNumber(string month) => month switch
-        {
-            "Janvier" => 1,
-            "Février" => 2,
-            "Mars" => 3,
-            "Avril" => 4,
-            "Mai" => 5,
-            "Juin" => 6,
-            "Juillet" => 7,
-            "Août" => 8,
-            "Septembre" => 9,
-            "Octobre" => 10,
-            "Novembre" => 11,
-            "Décembre" => 12,
-            _ => 1
-        };
-
         // === STATISTIQUES COMPLÈTES ===
         [RelayCommand]
         private async Task LoadCompleteStatsAsync()
         {
-            if (Championship == null) return;
-
-            CompleteStats.Clear();
-
-            var allPlayers = Championship.Standings
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.CurrentPosition)
-                .ToList();
-
-            foreach (var standing in allPlayers)
+            try
             {
-                var performances = await GetAllPlayerPerformancesAsync(standing.PlayerId);
+                if (Championship == null) return;
 
-                // HU = fois où le joueur a fini dans le top 2 (heads-up à la fin)
-                var huPerformances = performances.Where(p => p.Position <= 2 && p.Position > 0).ToList(); // Position 1 ou 2, et non éliminé tôt
-                int huCount = huPerformances.Count;
-                int huWins = huPerformances.Count(p => p.Position == 1);
+                CompleteStats.Clear();
 
-                var stat = new PlayerCompleteStat
+                // CORRECTION : Passe les dépendances nécessaires au calcul
+                var allPerformances = await _dataLoaderService.LoadAllPerformancesBatchAsync(
+                    _championshipId,
+                    Championship,
+                    _calculationService);
+
+                var allPlayers = Championship.Standings
+                    .Where(s => s.IsActive)
+                    .OrderBy(s => s.CurrentPosition)
+                    .ToList();
+
+                foreach (var standing in allPlayers)
                 {
-                    Position = standing.CurrentPosition,
-                    PlayerName = standing.Player?.Name ?? "Inconnu",
-                    MatchesPlayed = performances.Count,
-                    Victories = performances.Count(p => p.Position == 1),
-                    VictoryRate = performances.Any() ? (double)performances.Count(p => p.Position == 1) / performances.Count * 100 : 0,
-                    Top3 = performances.Count(p => p.Position <= 3),
-                    Top3Rate = performances.Any() ? (double)performances.Count(p => p.Position <= 3) / performances.Count * 100 : 0,
-                    HeadToHead = huCount,
-                    HeadToHeadRate = performances.Any() ? (double)huCount / performances.Count * 100 : 0,
-                    HeadToHeadWins = huWins,
-                    HeadToHeadWinRate = huCount > 0 ? (double)huWins / huCount * 100 : 0,
-                    AveragePosition = performances.Any() ? performances.Average(p => (double)p.Position) : 0,
-                    TotalPoints = performances.Sum(p => p.Points), // CORRECTION : Utilise les points calculés
-                    AveragePoints = performances.Any() ? performances.Average(p => (double)p.Points) : 0,
-                    TotalBounties = performances.Sum(p => p.Bounties),
-                    AverageBounties = performances.Any() ? (double)performances.Sum(p => p.Bounties) / performances.Count : 0,
-                    TotalRebuys = performances.Sum(p => p.Rebuys)
-                };
+                    if (!allPerformances.ContainsKey(standing.PlayerId))
+                        continue;
 
-                CompleteStats.Add(stat);
-            }
-        }
+                    var performances = allPerformances[standing.PlayerId];
 
-        private async Task<List<FullPerformance>> GetAllPlayerPerformancesAsync(int playerId)
-        {
-            var matches = await _context.ChampionshipMatches
-                .Where(m => m.ChampionshipId == _championshipId)
-                .Include(m => m.Tournament)
-                    .ThenInclude(t => t.Players)
-                .ToListAsync();
+                    // Stats HU : finir dans les 2 premiers (peu importe le nombre de joueurs)
+                    var huPerformances = performances.Where(p => p.Position <= 2).ToList();
+                    int huCount = huPerformances.Count;
+                    int huWins = huPerformances.Count(p => p.Position == 1);
 
-            var performances = new List<FullPerformance>();
-
-            foreach (var match in matches)
-            {
-                var tp = await _context.TournamentPlayers
-                    .FirstOrDefaultAsync(t => t.TournamentId == match.TournamentId && t.PlayerId == playerId);
-
-                if (tp != null && tp.FinishPosition.HasValue)
-                {
-                    var totalPlayers = await _context.TournamentPlayers
-                        .CountAsync(t => t.TournamentId == match.TournamentId && t.FinishPosition.HasValue);
-
-                    // Calculer les points EXACTS avec toutes les règles
-                    int basePoints = CalculateMatchPointsForPlayer(Championship, tp.FinishPosition.Value);
-                    basePoints = (int)(basePoints * match.Coefficient);
-
-                    // Ajouter bonus bounties
-                    if (Championship.CountBounties)
+                    var stat = new PlayerCompleteStat
                     {
-                        basePoints += tp.BountyKills * Championship.PointsPerBounty;
-                    }
+                        Position = standing.CurrentPosition,
+                        PlayerName = standing.Player?.Name ?? "Inconnu",
+                        MatchesPlayed = performances.Count,
+                        Victories = performances.Count(p => p.Position == 1),
+                        VictoryRate = performances.Any() ? (double)performances.Count(p => p.Position == 1) / performances.Count * 100 : 0,
+                        Top3 = performances.Count(p => p.Position <= 3),
+                        Top3Rate = performances.Any() ? (double)performances.Count(p => p.Position <= 3) / performances.Count * 100 : 0,
+                        HeadToHead = huCount,
+                        HeadToHeadRate = performances.Any() ? (double)huCount / performances.Count * 100 : 0,
+                        HeadToHeadWins = huWins,
+                        HeadToHeadWinRate = huCount > 0 ? (double)huWins / huCount * 100 : 0,
+                        AveragePosition = performances.Any() ? performances.Average(p => (double)p.Position) : 0,
+                        TotalPoints = performances.Sum(p => p.Points), // Points déjà calculés
+                        AveragePoints = performances.Any() ? performances.Average(p => (double)p.Points) : 0,
+                        TotalBounties = performances.Sum(p => p.Bounties),
+                        AverageBounties = performances.Any() ? (double)performances.Sum(p => p.Bounties) / performances.Count : 0,
+                        TotalRebuys = performances.Sum(p => p.Rebuys)
+                    };
 
-                    // Ajouter bonus victoire
-                    if (tp.FinishPosition == 1 && Championship.VictoryBonus > 0)
-                    {
-                        basePoints += Championship.VictoryBonus;
-                    }
-
-                    // Ajouter bonus top 3
-                    if (tp.FinishPosition <= 3 && Championship.Top3Bonus > 0)
-                    {
-                        basePoints += Championship.Top3Bonus;
-                    }
-
-                    // Pénalité recaves
-                    if (tp.RebuyCount > 0)
-                    {
-                        basePoints -= tp.RebuyCount * Championship.RebuyPointsPenalty;
-                        basePoints = (int)(basePoints * Championship.RebuyPointsMultiplier);
-                    }
-
-                    performances.Add(new FullPerformance
-                    {
-                        Position = tp.FinishPosition.Value,
-                        Points = basePoints,
-                        Bounties = tp.BountyKills,
-                        Rebuys = tp.RebuyCount,
-                        TotalPlayers = totalPlayers
-                    });
+                    CompleteStats.Add(stat);
                 }
             }
-
-            return performances;
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur chargement stats : {ex.Message}");
+            }
         }
-
-        // === STATISTIQUES INSOLITES ===
-
         [RelayCommand]
         private async Task LoadInsolitesAsync()
         {
-            if (Championship == null || !CompleteStats.Any()) return;
-
-            var playerData = new Dictionary<int, PlayerInsolitData>();
-
-            // Collecter toutes les données nécessaires
-            foreach (var standing in Championship.Standings.Where(s => s.IsActive))
+            try
             {
-                var matches = await _context.ChampionshipMatches
-                    .Where(m => m.ChampionshipId == _championshipId)
-                    .Include(m => m.Tournament)
-                    .ToListAsync();
+                if (Championship == null || !CompleteStats.Any()) return;
 
-                int totalMinutes = 0;
-                int tournamentsPlayed = 0;
-                int victories = 0;
-                int secondPlaces = 0;
-                int finalTables = 0;
-                int totalBounties = 0;
-                int totalPoints = 0;
+                var playerData = new Dictionary<int, PlayerInsolitData>();
 
-                foreach (var match in matches)
+                var matches = await _dataLoaderService.LoadMatchesWithPlayersAsync(_championshipId);
+
+                foreach (var standing in Championship.Standings.Where(s => s.IsActive))
                 {
-                    var tp = await _context.TournamentPlayers
-                        .FirstOrDefaultAsync(t => t.TournamentId == match.TournamentId && t.PlayerId == standing.PlayerId);
+                    int totalMinutes = 0;
+                    int tournamentsPlayed = 0;
+                    int victories = 0;
+                    int secondPlaces = 0;
+                    int finalTables = 0;
+                    int totalBounties = 0;
+                    int totalPoints = 0;
 
-                    if (tp != null && tp.FinishPosition.HasValue)
+                    foreach (var match in matches)
                     {
+                        var tp = match.Tournament?.Players.FirstOrDefault(p => p.PlayerId == standing.PlayerId);
+                        if (tp?.FinishPosition == null) continue;
+
                         tournamentsPlayed++;
 
-                        // Temps de jeu (approximation basée sur position)
-                        var tournament = match.Tournament;
-                        if (tournament?.StartTime != null && tournament.EndTime != null)
+                        if (match.Tournament?.StartTime != null && match.Tournament.EndTime != null)
                         {
-                            var duration = (tournament.EndTime.Value - tournament.StartTime.Value).TotalMinutes;
-                            // Temps proportionnel selon position
-                            var totalPlayers = await _context.TournamentPlayers.CountAsync(t => t.TournamentId == match.TournamentId);
-                            var survivalRate = (double)(totalPlayers - tp.FinishPosition.Value + 1) / totalPlayers;
+                            var duration = (match.Tournament.EndTime.Value - match.Tournament.StartTime.Value).TotalMinutes;
+                            var totalPlayersCount = match.Tournament.Players.Count;
+                            var survivalRate = (double)(totalPlayersCount - tp.FinishPosition.Value + 1) / totalPlayersCount;
                             totalMinutes += (int)(duration * survivalRate);
                         }
 
                         if (tp.FinishPosition == 1) victories++;
                         if (tp.FinishPosition == 2) secondPlaces++;
 
-                        // Table finale = Top 9
-                        var playersCount = await _context.TournamentPlayers.CountAsync(t => t.TournamentId == match.TournamentId);
+                        var playersCount = match.Tournament?.Players.Count ?? 0;
                         if (tp.FinishPosition <= Math.Min(9, playersCount)) finalTables++;
 
                         totalBounties += tp.BountyKills;
+                    
+                        totalPoints += _calculationService.CalculateFullMatchPoints(Championship, match, tp);
+                    }
 
-                        // Calculer points
-                        int basePoints = CalculateMatchPointsForPlayer(Championship, tp.FinishPosition.Value);
-                        basePoints = (int)(basePoints * match.Coefficient);
-                        if (Championship.CountBounties)
-                            basePoints += tp.BountyKills * Championship.PointsPerBounty;
-                        if (tp.FinishPosition == 1 && Championship.VictoryBonus > 0)
-                            basePoints += Championship.VictoryBonus;
-                        if (tp.FinishPosition <= 3 && Championship.Top3Bonus > 0)
-                            basePoints += Championship.Top3Bonus;
-
-                        totalPoints += basePoints;
+                    if (tournamentsPlayed > 0)
+                    {
+                        playerData[standing.PlayerId] = new PlayerInsolitData
+                        {
+                            PlayerId = standing.PlayerId,
+                            PlayerName = standing.Player?.Name ?? "Inconnu",
+                            TotalBounties = totalBounties,
+                            AverageMinutes = totalMinutes / tournamentsPlayed,
+                            TotalMinutes = totalMinutes,
+                            Victories = victories,
+                            SecondPlaces = secondPlaces,
+                            FinalTables = finalTables,
+                            TournamentsPlayed = tournamentsPlayed,
+                            AveragePoints = (double)totalPoints / tournamentsPlayed
+                        };
                     }
                 }
 
-                if (tournamentsPlayed > 0)
-                {
-                    playerData[standing.PlayerId] = new PlayerInsolitData
-                    {
-                        PlayerId = standing.PlayerId,
-                        PlayerName = standing.Player?.Name ?? "Inconnu",
-                        TotalBounties = totalBounties,
-                        AverageMinutes = totalMinutes / tournamentsPlayed,
-                        TotalMinutes = totalMinutes,
-                        Victories = victories,
-                        SecondPlaces = secondPlaces,
-                        FinalTables = finalTables,
-                        TournamentsPlayed = tournamentsPlayed,
-                        AveragePoints = (double)totalPoints / tournamentsPlayed
-                    };
-                }
+                SniperStat = CalculateInsoliteStat(playerData.Values, p => p.TotalBounties, "🎯", "killer");
+                TouristeStat = CalculateInsoliteStat(playerData.Values, p => p.AverageMinutes, "🏖️", "rapide à bust", ascending: true);
+                TaulierStat = CalculateInsoliteStat(playerData.Values, p => p.TotalMinutes, "⏱️", "temps de jeu");
+                BossStat = CalculateInsoliteStat(playerData.Values, p => p.Victories, "👑", "victoires");
+                MarcheStat = CalculateInsoliteStat(playerData.Values, p => p.SecondPlaces, "🥈", "secondes places");
+                PilierStat = CalculateInsoliteStat(playerData.Values, p => p.FinalTables, "🤺​​", "tables finales");
+                RegStat = CalculateInsoliteStat(playerData.Values, p => p.TournamentsPlayed, "🎲", "tournois");
+                RoiMakerStat = CalculateInsoliteStat(playerData.Values, p => p.AveragePoints, "💰", "pts/tournoi");
             }
-
-            // Calculer les stats insolites
-            SniperStat = CalculateInsoliteStat(playerData.Values, p => p.TotalBounties, "🎯", "kills");
-            TouristeStat = CalculateInsoliteStat(playerData.Values, p => p.AverageMinutes, "🏖️", "min/tournoi", ascending: true);
-            TaulierStat = CalculateInsoliteStat(playerData.Values, p => p.TotalMinutes, "⏱️", "min");
-            BossStat = CalculateInsoliteStat(playerData.Values, p => p.Victories, "👑", "victoires");
-            MarcheStat = CalculateInsoliteStat(playerData.Values, p => p.SecondPlaces, "🥈", "secondes places");
-            PilierStat = CalculateInsoliteStat(playerData.Values, p => p.FinalTables, "🏛️", "tables finales");
-            RegStat = CalculateInsoliteStat(playerData.Values, p => p.TournamentsPlayed, "🎲", "tournois");
-            RoiMakerStat = CalculateInsoliteStat(playerData.Values, p => p.AveragePoints, "💰", "pts/tournoi");
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur calcul stats insolites : {ex.Message}");
+            }
         }
 
         private InsoliteStat CalculateInsoliteStat<T>(IEnumerable<PlayerInsolitData> data, Func<PlayerInsolitData, T> selector, string emoji, string unit, bool ascending = false) where T : IComparable<T>
@@ -696,21 +524,27 @@ namespace PokerTournamentDirector.ViewModels
             return stat;
         }
 
-
         // === MANCHES ===
         [RelayCommand]
         private async Task LoadMatchesAsync()
         {
-            if (Championship == null) return;
-
-            var matches = Championship.Matches
-                .OrderByDescending(m => m.MatchDate)
-                .ToList();
-
-            Matches.Clear();
-            foreach (var m in matches)
+            try
             {
-                Matches.Add(m);
+                if (Championship == null) return;
+
+                var matches = Championship.Matches
+                    .OrderByDescending(m => m.MatchDate)
+                    .ToList();
+
+                Matches.Clear();
+                foreach (var m in matches)
+                {
+                    Matches.Add(m);
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur chargement manches : {ex.Message}");
             }
         }
 
@@ -745,19 +579,16 @@ namespace PokerTournamentDirector.ViewModels
 
                 foreach (var tp in tournament.Players.Where(p => p.FinishPosition.HasValue).OrderBy(p => p.FinishPosition))
                 {
-                    // Points de base (sans bonus)
-                    int basePoints = CalculateMatchPointsForPlayer(championship, tp.FinishPosition.Value);
-
-                    // Points totaux (avec TOUT : coef + bonus + malus)
-                    int totalPoints = CalculateFullMatchPoints(championship, match, tp);
+                    int basePoints = _calculationService.CalculateBasePoints(championship, tp.FinishPosition.Value);
+                    int totalPoints = _calculationService.CalculateFullMatchPoints(championship, match, tp);
 
                     MatchResults.Add(new MatchPlayerResult
                     {
                         Position = tp.FinishPosition.Value,
                         PlayerName = tp.Player?.Name ?? "Inconnu",
-                        BasePoints = basePoints, // Points bruts
+                        BasePoints = basePoints,
                         Coefficient = match.Coefficient,
-                        TotalPoints = totalPoints, // Points finaux avec tout
+                        TotalPoints = totalPoints,
                         Bounties = tp.BountyKills,
                         Rebuys = tp.RebuyCount,
                         Winnings = tp.Winnings ?? 0
@@ -779,7 +610,127 @@ namespace PokerTournamentDirector.ViewModels
             }
         }
 
-        // AJOUTE méthode pour export PDF classement
+        [RelayCommand]
+        private void SwitchTab(string tabIndex)
+        {
+            if (int.TryParse(tabIndex, out int index))
+            {
+                SelectedTabIndex = index;
+
+                if (index == 1) _ = LoadCompleteStatsAsync();
+                if (index == 3) _ = SearchPlayersAsync();
+            }
+        }
+
+        // === JOUEURS ===
+        [RelayCommand]
+        private async Task SearchPlayersAsync()
+        {
+            try
+            {
+                if (Championship == null) return;
+
+                var query = Championship.Standings.Where(s => s.IsActive).AsEnumerable();
+
+                if (!string.IsNullOrWhiteSpace(PlayerSearchText))
+                {
+                    query = query.Where(s =>
+                        s.Player.Name.Contains(PlayerSearchText, StringComparison.OrdinalIgnoreCase));
+                }
+
+                Players.Clear();
+                foreach (var p in query.OrderBy(s => s.CurrentPosition))
+                {
+                    Players.Add(p);
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur recherche : {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void ViewPlayerDetails()
+        {
+            if (SelectedPlayer == null)
+            {
+                CustomMessageBox.ShowWarning("Veuillez sélectionner un joueur.", "Sélection requise");
+                return;
+            }
+
+            SelectedTabIndex = 1;
+        }
+
+        // === LOGS ===
+        [RelayCommand]
+        private async Task LoadLogsAsync()
+        {
+            try
+            {
+                var logs = await _championshipService.GetLogsAsync(_championshipId);
+
+                Logs.Clear();
+                foreach (var log in logs)
+                {
+                    Logs.Add(log);
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur chargement logs : {ex.Message}");
+            }
+        }
+
+        partial void OnLogFilterActionChanged(string value)
+        {
+            _ = FilterLogsAsync();
+        }
+
+        private async Task FilterLogsAsync()
+        {
+            try
+            {
+                var allLogs = await _championshipService.GetLogsAsync(_championshipId);
+
+                IEnumerable<ChampionshipLog> filtered = allLogs;
+
+                switch (LogFilterAction)
+                {
+                    case "Création/Modification":
+                        filtered = allLogs.Where(l =>
+                            l.Action == ChampionshipLogAction.ChampionshipCreated ||
+                            l.Action == ChampionshipLogAction.ChampionshipModified ||
+                            l.Action == ChampionshipLogAction.ChampionshipArchived ||
+                            l.Action == ChampionshipLogAction.ChampionshipDeleted);
+                        break;
+
+                    case "Manches":
+                        filtered = allLogs.Where(l =>
+                            l.Action == ChampionshipLogAction.MatchAdded ||
+                            l.Action == ChampionshipLogAction.MatchRemoved);
+                        break;
+
+                    case "Points":
+                    case "Classements":
+                        filtered = allLogs.Where(l =>
+                            l.Action == ChampionshipLogAction.StandingsRecalculated);
+                        break;
+                }
+
+                Logs.Clear();
+                foreach (var log in filtered)
+                {
+                    Logs.Add(log);
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur filtrage logs : {ex.Message}");
+            }
+        }
+
+        // === EXPORT PDF ===
         [RelayCommand]
         private async Task ExportStandingsPdfAsync()
         {
@@ -803,7 +754,6 @@ namespace PokerTournamentDirector.ViewModels
             }
         }
 
-        // AJOUTE méthode pour export PDF manche
         [RelayCommand]
         private async Task ExportMatchPdfAsync()
         {
@@ -839,7 +789,6 @@ namespace PokerTournamentDirector.ViewModels
             PdfWriter.GetInstance(doc, new FileStream(filePath, FileMode.Create));
             doc.Open();
 
-            // Header
             var titleFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 20, iTextSharp.text.Font.BOLD, new BaseColor(0, 255, 136));
             var headerFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 12, iTextSharp.text.Font.NORMAL, BaseColor.DARK_GRAY);
             var tableHeaderFont = new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 10, iTextSharp.text.Font.BOLD, BaseColor.WHITE);
@@ -860,11 +809,9 @@ namespace PokerTournamentDirector.ViewModels
             dateGenerated.SpacingAfter = 20f;
             doc.Add(dateGenerated);
 
-            // Tableau
             var table = new PdfPTable(6) { WidthPercentage = 100 };
             table.SetWidths(new float[] { 10f, 35f, 15f, 15f, 15f, 10f });
 
-            // Headers
             AddPdfCell(table, "#", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
             AddPdfCell(table, "Joueur", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_LEFT);
             AddPdfCell(table, "Points", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
@@ -872,7 +819,6 @@ namespace PokerTournamentDirector.ViewModels
             AddPdfCell(table, "Victoires", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
             AddPdfCell(table, "Kills", tableHeaderFont, new BaseColor(15, 52, 96), Element.ALIGN_CENTER);
 
-            // Rows
             foreach (var standing in Standings)
             {
                 var rowColor = standing.CurrentPosition % 2 == 0 ? new BaseColor(240, 240, 240) : BaseColor.WHITE;
@@ -924,7 +870,7 @@ namespace PokerTournamentDirector.ViewModels
 
                 AddPdfCell(table, result.Position.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
                 AddPdfCell(table, result.PlayerName, tableCellFont, rowColor, Element.ALIGN_LEFT);
-                AddPdfCell(table, result.TotalPoints.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER); // Points complets
+                AddPdfCell(table, result.TotalPoints.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
                 AddPdfCell(table, result.Bounties.ToString(), tableCellFont, rowColor, Element.ALIGN_CENTER);
             }
 
@@ -944,165 +890,70 @@ namespace PokerTournamentDirector.ViewModels
             table.AddCell(cell);
         }
 
-        private int CalculateMatchPointsForPlayer(Championship championship, int position)
+        public void Dispose()
         {
-            int basePoints = 0;
-
-            switch (championship.PointsMode)
-            {
-                case ChampionshipPointsMode.Linear:
-                    basePoints = Math.Max(1, championship.LinearFirstPlacePoints - (position - 1));
-                    break;
-
-                case ChampionshipPointsMode.FixedByPosition:
-                    basePoints = GetFixedPointsForPosition(championship, position);
-                    break;
-
-                case ChampionshipPointsMode.ProportionalPrizePool:
-                    // Pour l'instant, utilise linéaire comme fallback
-                    basePoints = Math.Max(1, championship.LinearFirstPlacePoints - (position - 1));
-                    break;
-            }
-
-            if (championship.EnableParticipationPoints)
-                basePoints += championship.ParticipationPoints;
-
-            return basePoints;
+            // Le context sera disposé par DI
         }
 
-        private int GetFixedPointsForPosition(Championship championship, int position)
+        // Helper methods
+        private string GetMonthName(int month) => month switch
         {
-            if (string.IsNullOrEmpty(championship.FixedPointsTable)) return 0;
+            1 => "Janvier",
+            2 => "Février",
+            3 => "Mars",
+            4 => "Avril",
+            5 => "Mai",
+            6 => "Juin",
+            7 => "Juillet",
+            8 => "Août",
+            9 => "Septembre",
+            10 => "Octobre",
+            11 => "Novembre",
+            12 => "Décembre",
+            _ => ""
+        };
 
-            try
-            {
-                var table = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int>>(championship.FixedPointsTable);
-                if (table == null) return 0;
-
-                if (table.ContainsKey(position.ToString()))
-                    return table[position.ToString()];
-
-                foreach (var kvp in table)
-                {
-                    if (kvp.Key.Contains("-"))
-                    {
-                        var parts = kvp.Key.Split('-');
-                        if (int.TryParse(parts[0], out int min) && int.TryParse(parts[1], out int max))
-                        {
-                            if (position >= min && position <= max)
-                                return kvp.Value;
-                        }
-                    }
-                }
-            }
-            catch { }
-
-            return 0;
-        }
-
-        [RelayCommand]
-        private void SwitchTab(string tabIndex)
+        private int GetMonthNumber(string month) => month switch
         {
-            if (int.TryParse(tabIndex, out int index))
-            {
-                SelectedTabIndex = index;
-
-                // Charger données à la demande
-                if (index == 1) _ = LoadCompleteStatsAsync();
-                if (index == 3) _ = SearchPlayersAsync();
-            }
-        }
-
-        // === JOUEURS ===
-        [RelayCommand]
-        private async Task SearchPlayersAsync()
-        {
-            if (Championship == null) return;
-
-            var query = Championship.Standings.Where(s => s.IsActive).AsEnumerable();
-
-            if (!string.IsNullOrWhiteSpace(PlayerSearchText))
-            {
-                query = query.Where(s =>
-                    s.Player.Name.Contains(PlayerSearchText, StringComparison.OrdinalIgnoreCase));
-            }
-
-            Players.Clear();
-            foreach (var p in query.OrderBy(s => s.CurrentPosition))
-            {
-                Players.Add(p);
-            }
-        }
-
-        [RelayCommand]
-        private void ViewPlayerDetails()
-        {
-            if (SelectedPlayer == null)
-            {
-                CustomMessageBox.ShowWarning("Veuillez sélectionner un joueur.", "Sélection requise");
-                return;
-            }
-
-            SelectedTabIndex = 1;
-        }
-
-        // === LOGS ===
-        [RelayCommand]
-        private async Task LoadLogsAsync()
-        {
-            var logs = await _championshipService.GetLogsAsync(_championshipId);
-
-            Logs.Clear();
-            foreach (var log in logs)
-            {
-                Logs.Add(log);
-            }
-        }
-
-        partial void OnLogFilterActionChanged(string value)
-        {
-            _ = FilterLogsAsync();
-        }
-
-        private async Task FilterLogsAsync()
-        {
-            var allLogs = await _championshipService.GetLogsAsync(_championshipId);
-
-            IEnumerable<ChampionshipLog> filtered = allLogs;
-
-            switch (LogFilterAction)
-            {
-                case "Création/Modification":
-                    filtered = allLogs.Where(l =>
-                        l.Action == ChampionshipLogAction.ChampionshipCreated ||
-                        l.Action == ChampionshipLogAction.ChampionshipModified ||
-                        l.Action == ChampionshipLogAction.ChampionshipArchived ||
-                        l.Action == ChampionshipLogAction.ChampionshipDeleted);
-                    break;
-
-                case "Manches":
-                    filtered = allLogs.Where(l =>
-                        l.Action == ChampionshipLogAction.MatchAdded ||
-                        l.Action == ChampionshipLogAction.MatchRemoved);
-                    break;
-
-                case "Points":
-                case "Classements":
-                    filtered = allLogs.Where(l =>
-                        l.Action == ChampionshipLogAction.StandingsRecalculated);
-                    break;
-            }
-
-            Logs.Clear();
-            foreach (var log in filtered)
-            {
-                Logs.Add(log);
-            }
-        }
-
+            "Janvier" => 1,
+            "Février" => 2,
+            "Mars" => 3,
+            "Avril" => 4,
+            "Mai" => 5,
+            "Juin" => 6,
+            "Juillet" => 7,
+            "Août" => 8,
+            "Septembre" => 9,
+            "Octobre" => 10,
+            "Novembre" => 11,
+            "Décembre" => 12,
+            _ => 1
+        };
     }
 
-    // === CLASSES HELPERS ===
+    // Classes helper (gardées pour simplicité)
+    public class PeriodStanding
+    {
+        public int PlayerId { get; set; }
+        public string PlayerName { get; set; } = "";
+        public int MatchesPlayed { get; set; }
+        public int TotalPoints { get; set; }
+        public int Victories { get; set; }
+        public int Top3 { get; set; }
+        public int TotalBounties { get; set; }
+        public decimal TotalWinnings { get; set; }
+        public double AveragePosition { get; set; }
+        public List<PeriodPerformance> Performances { get; set; } = new();
+    }
+
+    public class PeriodPerformance
+    {
+        public int Points { get; set; }
+        public int Position { get; set; }
+        public int Bounties { get; set; }
+        public decimal Winnings { get; set; }
+    }
+
     public class PlayerCompleteStat
     {
         public int Position { get; set; }
@@ -1118,7 +969,7 @@ namespace PokerTournamentDirector.ViewModels
         public double HeadToHeadWinRate { get; set; }
         public double AveragePosition { get; set; }
         public int TotalPoints { get; set; }
-        public double AveragePoints { get; set; } // AJOUT
+        public double AveragePoints { get; set; }
         public int TotalBounties { get; set; }
         public double AverageBounties { get; set; }
         public int TotalRebuys { get; set; }
@@ -1127,7 +978,7 @@ namespace PokerTournamentDirector.ViewModels
     public class FullPerformance
     {
         public int Position { get; set; }
-        public int Points { get; set; } // AJOUT
+        public int Points { get; set; }
         public int Bounties { get; set; }
         public int Rebuys { get; set; }
         public int TotalPlayers { get; set; }
@@ -1145,7 +996,6 @@ namespace PokerTournamentDirector.ViewModels
         public decimal Winnings { get; set; }
     }
 
-    // === Classes stats insolites ===
     public class PlayerInsolitData
     {
         public int PlayerId { get; set; }

@@ -47,6 +47,8 @@ namespace PokerTournamentDirector
             services.AddSingleton<AudioService>();
             services.AddTransient<TableManagementService>();
             services.AddTransient<ChampionshipService>();
+            services.AddScoped<ChampionshipCalculationService>();
+            services.AddScoped<ChampionshipDataLoaderService>();
             services.AddScoped<TournamentLogService>();
 
             // ViewModels

@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using PokerTournamentDirector.Data;
 using PokerTournamentDirector.Models;
 using PokerTournamentDirector.Services;
 using PokerTournamentDirector.Views;
@@ -186,9 +188,11 @@ namespace PokerTournamentDirector.ViewModels
 
                     if (openDashboard == System.Windows.MessageBoxResult.Yes)
                     {
+                        var context = App.Services.GetRequiredService<PokerDbContext>();
+
                         var dashboard = new Views.ChampionshipDashboardView(
                             _championshipId.Value,
-                            _championshipService);
+                            _championshipService, context);
                         dashboard.Show();
                     }
                 }

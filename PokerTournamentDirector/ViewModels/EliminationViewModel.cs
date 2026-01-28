@@ -123,7 +123,15 @@ namespace PokerTournamentDirector.ViewModels
                 ActivePlayers.Add(p);
 
             PlayersRemaining = ActivePlayers.Count;
-            NextPosition = PlayersRemaining;
+
+            // FIX: Calculer la position suivante basée sur le nombre total de joueurs inscrits
+            // (actifs + éliminés), pas seulement les actifs
+            var allPlayers = await _context.TournamentPlayers
+                .Where(tp => tp.TournamentId == _tournamentId)
+                .ToListAsync();
+
+            var totalEliminatedWithPosition = allPlayers.Count(p => p.IsEliminated && p.FinishPosition.HasValue);
+            NextPosition = allPlayers.Count - totalEliminatedWithPosition;
         }
 
         private async Task LoadHistoryAsync()
@@ -134,41 +142,86 @@ namespace PokerTournamentDirector.ViewModels
 
             var history = new List<HistoryItem>();
 
-            var eliminated = _tournament!.Players
-                .Where(p => p.IsEliminated && p.FinishPosition.HasValue)
-                .OrderByDescending(p => p.EliminationTime ?? DateTime.Now);
+            // Récupérer tous les logs du tournoi
+            var logs = await _context.TournamentLogs
+                .Where(l => l.TournamentId == _tournamentId)
+                .OrderByDescending(l => l.Timestamp)
+                .ToListAsync();
 
-            foreach (var player in eliminated)
+            foreach (var log in logs)
             {
-                var killer = player.EliminatedByPlayerId.HasValue
-                    ? _tournament.Players.FirstOrDefault(p => p.Id == player.EliminatedByPlayerId.Value)
-                    : null;
-
-                history.Add(new HistoryItem
+                switch (log.Action)
                 {
-                    Position = player.FinishPosition!.Value,
-                    PlayerName = player.Player?.Name ?? "Inconnu",
-                    KillerName = killer?.Player?.Name ?? "Aucun",
-                    ActionType = "💀 Élimination",
-                    IsRebuy = false,
-                    Timestamp = player.EliminationTime ?? DateTime.Now
-                });
-
-                // Ajouter les recaves
-                if (player.RebuyCount > 0)
-                {
-                    for (int i = 0; i < player.RebuyCount; i++)
-                    {
-                        history.Add(new HistoryItem
+                    case "Élimination":
+                        // Parser: "PlayerName éliminé #Position par KillerName"
+                        var eliminationParts = log.Details.Split(new[] { " éliminé #", " par " }, StringSplitOptions.None);
+                        if (eliminationParts.Length >= 2)
                         {
-                            Position = player.FinishPosition.Value,
-                            PlayerName = player.Player?.Name ?? "Inconnu",
-                            KillerName = "",
-                            ActionType = $"💰 Recave #{i + 1}",
-                            IsRebuy = true,
-                            Timestamp = (player.EliminationTime ?? DateTime.Now).AddSeconds(i + 1)
-                        });
-                    }
+                            var playerName = eliminationParts[0];
+                            var positionStr = eliminationParts[1].Split(' ')[0];
+                            var killerName = eliminationParts.Length > 2 ? eliminationParts[2] : "Aucun";
+
+                            if (int.TryParse(positionStr, out int position))
+                            {
+                                history.Add(new HistoryItem
+                                {
+                                    Position = position,
+                                    PlayerName = playerName,
+                                    KillerName = killerName,
+                                    ActionType = "💀 Élimination",
+                                    IsRebuy = false,
+                                    IsUndo = false,
+                                    Timestamp = log.Timestamp
+                                });
+                            }
+                        }
+                        break;
+
+                    case "Recave":
+                        // Parser: "PlayerName - €X"
+                        var rebuyParts = log.Details.Split(new[] { " - " }, StringSplitOptions.None);
+                        if (rebuyParts.Length >= 1)
+                        {
+                            var playerName = rebuyParts[0];
+                            var amount = rebuyParts.Length > 1 ? rebuyParts[1] : "";
+
+                            history.Add(new HistoryItem
+                            {
+                                Position = 0, // Pas de position pour une recave
+                                PlayerName = playerName,
+                                KillerName = "",
+                                ActionType = $"💰 Recave {amount}",
+                                IsRebuy = true,
+                                IsUndo = false,
+                                Timestamp = log.Timestamp
+                            });
+                        }
+                        break;
+
+                    case "Annulation élimination":
+                        // Parser: "PlayerName (#Position) - Killer: KillerName"
+                        var undoParts = log.Details.Split(new[] { " (#", ") - Killer: " }, StringSplitOptions.None);
+                        if (undoParts.Length >= 2)
+                        {
+                            var playerName = undoParts[0];
+                            var positionStr = undoParts[1];
+                            var killerName = undoParts.Length > 2 ? undoParts[2] : "Aucun";
+
+                            if (int.TryParse(positionStr, out int position))
+                            {
+                                history.Add(new HistoryItem
+                                {
+                                    Position = position,
+                                    PlayerName = playerName,
+                                    KillerName = killerName,
+                                    ActionType = "↩️ Annulation",
+                                    IsRebuy = false,
+                                    IsUndo = true,
+                                    Timestamp = log.Timestamp
+                                });
+                            }
+                        }
+                        break;
                 }
             }
 
@@ -176,7 +229,7 @@ namespace PokerTournamentDirector.ViewModels
             foreach (var item in history.OrderByDescending(h => h.Timestamp))
                 EliminationHistory.Add(item);
 
-            TotalEliminations = eliminated.Count();
+            TotalEliminations = _tournament.Players.Count(p => p.IsEliminated && p.FinishPosition.HasValue);
         }
 
         [RelayCommand]
@@ -231,19 +284,22 @@ namespace PokerTournamentDirector.ViewModels
                 if (!canRebuy) return;
             }
 
-            CanRebuy = await _playerService.CanPlayerRebuyAsync(playerId, _tournamentId);
-            var rebuyCount = await _playerService.GetPlayerRebuyCountAsync(playerId, _tournamentId);
+            // FIX: Récupérer le nombre de recaves depuis TournamentPlayer.RebuyCount
+            var rebuyCount = SelectedEliminatedPlayer.RebuyCount;
 
-            if (CanRebuy)
+            // Vérifier si le joueur peut encore recaver
+            if (_tournament.MaxRebuysPerPlayer > 0 && rebuyCount >= _tournament.MaxRebuysPerPlayer)
             {
+                CanRebuy = false;
+                RebuyMessage = $"❌ Limite atteinte ({rebuyCount}/{_tournament.MaxRebuysPerPlayer})";
+            }
+            else
+            {
+                CanRebuy = true;
                 var remaining = _tournament.MaxRebuysPerPlayer > 0
                     ? _tournament.MaxRebuysPerPlayer - rebuyCount
                     : 999;
                 RebuyMessage = $"✅ Recave disponible ({remaining} restantes) - {RebuyAmount:C0}";
-            }
-            else
-            {
-                RebuyMessage = $"❌ Limite atteinte ({rebuyCount}/{_tournament.MaxRebuysPerPlayer})";
             }
         }
 
@@ -594,6 +650,7 @@ namespace PokerTournamentDirector.ViewModels
         public string KillerName { get; set; } = "";
         public string ActionType { get; set; } = "";
         public bool IsRebuy { get; set; }
+        public bool IsUndo { get; set; }
         public DateTime Timestamp { get; set; }
         public string TimeDisplay => Timestamp.ToString("HH:mm:ss");
     }

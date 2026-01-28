@@ -36,14 +36,7 @@
             <Setter Property="Height" Value="40"/>
         </Style>
 
-        <Style x:Key="ComboStyle" TargetType="ComboBox">
-            <Setter Property="Background" Value="#0f3460"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="10"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Height" Value="40"/>
-        </Style>
+        
 
         <Style x:Key="PlayerListStyle" TargetType="ListBox">
             <Setter Property="Background" Value="#0f3460"/>
@@ -236,262 +229,286 @@
 
         <!-- CONTENU PRINCIPAL -->
         <Grid Grid.Row="1" Margin="20">
-            
-            <!-- ÉTAPE 1 : Configuration -->
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ScrollViewer.Style>
-                    <Style TargetType="ScrollViewer">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding CurrentStep}" Value="1">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ScrollViewer.Style>
-                
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
 
-                    <!-- Colonne gauche : Template + Infos de base -->
-                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <TextBlock Text="📝 Utiliser un modèle (optionnel)" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
+            <!-- ÉTAPE 1 : Configuration - VERSION 2 COLONNES -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer.Style>
+                        <Style TargetType="ScrollViewer">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CurrentStep}" Value="1">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ScrollViewer.Style>
 
-                                <ComboBox ItemsSource="{Binding AvailableTemplates}"
-         SelectedItem="{Binding SelectedTemplate}"
-         Height="40"
-         FontSize="14"
-         Padding="10"
-         VerticalContentAlignment="Center"
-         Background="#0f3460"
-         Foreground="Black"
-         FontWeight="Bold"
-         BorderBrush="#00ff88"
-         BorderThickness="2">
+                    <Grid Margin="20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="1.2*"/>
+                        </Grid.ColumnDefinitions>
 
-                                    <!-- Template pour afficher les items -->
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Name}" 
-                       Foreground="Black"
-                       FontSize="14"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
+                        <!-- ========== COLONNE GAUCHE : Actions principales ========== -->
+                        <StackPanel Grid.Column="0">
 
-                                    <!-- Style pour les items dans le dropdown -->
-                                    <ComboBox.ItemContainerStyle>
-                                        <Style TargetType="ComboBoxItem">
-                                            <Setter Property="Background" Value="#0f3460"/>
-                                            <Setter Property="Padding" Value="10"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="ComboBoxItem">
-                                                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="Transparent"
-                                BorderThickness="0"
-                                Padding="{TemplateBinding Padding}">
-                                                            <ContentPresenter/>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="Border" Property="Background" Value="#1a4a8a"/>
-                                                                <!-- Changement de couleur du texte au survol -->
-                                                                <Setter Property="Foreground" Value="White"/>
-                                                            </Trigger>
-                                                            <Trigger Property="IsSelected" Value="True">
-                                                                <Setter TargetName="Border" Property="Background" Value="#00ff88"/>
-                                                                <Setter Property="Foreground" Value="#1a1a2e"/>
-                                                            </Trigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </ComboBox.ItemContainerStyle>
-                                </ComboBox>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Section Championnat -->
-                        <Border Background="#0f3460" 
-CornerRadius="10" 
-Padding="20" 
-Margin="0,15,0,0">
-                            <StackPanel>
-                                <!-- Titre Section -->
-                                <TextBlock Text="🏆 Championnat (optionnel)" 
-           Foreground="#00ff88" 
-           FontSize="18" 
-           FontWeight="Bold" 
-           Margin="0,0,0,15"/>
-
-                                <!-- Checkbox -->
-                                <CheckBox x:Name="ChkChampionship"
-          Content="Ce tournoi est une manche de championnat"
-          IsChecked="{Binding IsChampionshipMatch}"
-          Foreground="White"
-          FontSize="14"
-          Margin="0,0,0,15"/>
-
-                                <!-- Détails (visible si coché) -->
+                            <!-- 1. TEMPLATE -->
+                            <Border Style="{StaticResource CardStyle}">
                                 <StackPanel>
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding ElementName=ChkChampionship, Path=IsChecked}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
+                                    <TextBlock Text="📝 Modèle de tournoi" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               Foreground="White" 
+                               Margin="0,0,0,8"/>
 
-                                    <!-- Sélection -->
-                                    <TextBlock Text="Sélectionner le championnat :" 
-               Foreground="White" 
-               FontSize="13" 
-               Margin="0,0,0,5"/>
-                                    <ComboBox ItemsSource="{Binding AvailableChampionships}"
-              SelectedItem="{Binding SelectedChampionship}"
-              Height="40"
-              Margin="0,0,0,12">
+                                    <TextBlock Text="Démarrez rapidement avec un modèle pré-configuré" 
+                               FontSize="13" 
+                               Foreground="#a0a0a0" 
+                               Margin="0,0,0,15"/>
+
+                                    <ComboBox ItemsSource="{Binding AvailableTemplates}"
+                              SelectedItem="{Binding SelectedTemplate}"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Height="45"
+                              Padding="12"
+                              VerticalContentAlignment="Center"
+                              FontSize="15"
+                              FontWeight="SemiBold">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock>
-                    <Run Text="{Binding Name}" FontWeight="Bold"/>
-                    <Run Text=" - " Foreground="Gray"/>
-                    <Run Text="{Binding Season}" Foreground="Gray"/>
-                                                </TextBlock>
+                                                <TextBlock Text="{Binding Name}"
+                                           Foreground="White"
+                                           FontSize="15"/>
                                             </DataTemplate>
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
-
-                                    <!-- Options -->
-                                    <WrapPanel>
-                                        <CheckBox Content="🏆 Finale" 
-                  IsChecked="{Binding IsFinalMatch}"
-                  Foreground="White"
-                  Margin="0,0,20,0"/>
-                                        <CheckBox Content="⭐ Main Event" 
-                  IsChecked="{Binding IsMainEvent}"
-                  Foreground="White"/>
-                                    </WrapPanel>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
+                            </Border>
 
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <TextBlock Text="⚙️ Configuration générale" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
-                                
-                                <TextBlock Text="Nom du tournoi" Style="{StaticResource LabelStyle}"/>
-                                <TextBox Text="{Binding TournamentName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
+                            <!-- 2. STRUCTURE DE BLINDS -->
+                            <Border Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="⏱️ Structure de blinds" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               Foreground="White" 
+                               Margin="0,0,0,15"/>
 
-                                <TextBlock Text="Buy-in (€)" Style="{StaticResource LabelStyle}"/>
-                                <TextBox Text="{Binding BuyIn, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
-
-                                <TextBlock Text="Starting Stack" Style="{StaticResource LabelStyle}"/>
-                                <TextBox Text="{Binding StartingStack, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
-
-                                <TextBlock Text="Structure de blinds" Style="{StaticResource LabelStyle}"/>
-                                <ComboBox ItemsSource="{Binding AvailableBlindStructures}"
-         SelectedItem="{Binding SelectedBlindStructure}"
-         DisplayMemberPath="Name"
-         Height="40"
-         FontSize="14"
-         Padding="10"
-         VerticalContentAlignment="Center"
-         Background="#0f3460"
-         Foreground="Black"
-         FontWeight="Bold"
-         BorderBrush="#00ff88"
-         BorderThickness="2">
-                                    <ComboBox.ItemContainerStyle>
-                                        <Style TargetType="ComboBoxItem">
-                                            <Setter Property="Background" Value="#0f3460"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                            <Setter Property="Padding" Value="10"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="ComboBoxItem">
-                                                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="Transparent"
-                                BorderThickness="0"
-                                Padding="{TemplateBinding Padding}">
-                                                            <ContentPresenter/>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="Border" Property="Background" Value="#1a4a8a"/>
-                                                            </Trigger>
-                                                            <Trigger Property="IsSelected" Value="True">
-                                                                <Setter TargetName="Border" Property="Background" Value="#00ff88"/>
-                                                                <Setter Property="Foreground" Value="#1a1a2e"/>
-                                                            </Trigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </ComboBox.ItemContainerStyle>
-                                </ComboBox>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-
-                   
-
-                    <!-- Colonne droite : Options avancées -->
-                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <TextBlock Text="🪑 Tables &amp; Places" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
-                                
-                                <TextBlock Text="Joueurs max" Style="{StaticResource LabelStyle}"/>
-                                <TextBox Text="{Binding MaxPlayers, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
-
-                                <TextBlock Text="Places par table" Style="{StaticResource LabelStyle}"/>
-                                <TextBox Text="{Binding SeatsPerTable, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
-
-                                <TextBlock Text="Late registration (niveaux)" Style="{StaticResource LabelStyle}"/>
-                                <TextBox Text="{Binding LateRegLevels, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <TextBlock Text="🔄 Recaves" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,15"/>
-                                
-                                <CheckBox Content="Autoriser les recaves" 
-                                         IsChecked="{Binding AllowRebuys}"
-                                         Foreground="White" 
-                                         FontSize="16"
-                                         Margin="0,0,0,15"/>
-
-                                <StackPanel Visibility="{Binding AllowRebuys, Converter={StaticResource BoolToVisibleConverter}}">
-                                    <TextBlock Text="Montant recave (€)" Style="{StaticResource LabelStyle}"/>
-                                    <TextBox Text="{Binding RebuyAmount, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
-
-                                    <TextBlock Text="Max recaves par joueur (0 = illimité)" Style="{StaticResource LabelStyle}"/>
-                                    <TextBox Text="{Binding MaxRebuysPerPlayer, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
-
-                                    <TextBlock Text="Niveau max pour recaver (0 = illimité)" Style="{StaticResource LabelStyle}"/>
-                                    <TextBox Text="{Binding RebuyMaxLevel, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}"/>
+                                    <ComboBox ItemsSource="{Binding AvailableBlindStructures}"
+                              SelectedItem="{Binding SelectedBlindStructure}"
+                              DisplayMemberPath="Name"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Height="45"
+                              Padding="12"
+                              VerticalContentAlignment="Center"
+                              FontSize="15"
+                              FontWeight="SemiBold"/>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Grid>
-            </ScrollViewer>
+                            </Border>
 
-            <!-- ÉTAPE 2 : Inscription joueurs -->
+                            <!-- 3. CHAMPIONNAT -->
+                            <Border Background="#0f3460" 
+                    CornerRadius="15" 
+                    Padding="20" 
+                    Margin="10">
+                                <StackPanel>
+                                    <TextBlock Text="🏆 Championnat (optionnel)" 
+                               Foreground="#00ff88" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               Margin="0,0,0,15"/>
+
+                                    <CheckBox x:Name="ChkChampionship"
+                              Content="Ce tournoi est une manche de championnat"
+                              IsChecked="{Binding IsChampionshipMatch}"
+                              Foreground="White"
+                              FontSize="15"
+                              Margin="0,0,0,15"/>
+
+                                    <!-- Détails championnat -->
+                                    <StackPanel>
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ElementName=ChkChampionship, Path=IsChecked}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+
+                                        <TextBlock Text="Sélectionner le championnat :" 
+                                   Foreground="White" 
+                                   FontSize="14" 
+                                   Margin="0,0,0,8"/>
+
+                                        <ComboBox ItemsSource="{Binding AvailableChampionships}"
+                                  SelectedItem="{Binding SelectedChampionship}"
+                                  Style="{StaticResource ComboBoxStyle}"
+                                  Height="45"
+                                  Margin="0,0,0,15"
+                                  Padding="12"
+                                  VerticalContentAlignment="Center"
+                                  FontSize="15"
+                                  FontWeight="SemiBold">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock>
+                                        <Run Text="{Binding Name}" FontWeight="Bold"/>
+                                        <Run Text=" - " Foreground="#a0a0a0"/>
+                                        <Run Text="{Binding Season}" Foreground="#a0a0a0"/>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+
+                                        <!-- Options championnat -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <CheckBox Content="🏆 Finale" 
+                                      IsChecked="{Binding IsFinalMatch}"
+                                      Foreground="White"
+                                      FontSize="14"
+                                      Margin="0,0,20,0"/>
+                                            <CheckBox Content="⭐ Main Event" 
+                                      IsChecked="{Binding IsMainEvent}"
+                                      Foreground="White"
+                                      FontSize="14"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+
+                        <!-- ========== COLONNE DROITE : Configuration détaillée ========== -->
+                        <StackPanel Grid.Column="2">
+
+                            <!-- Infos générales -->
+                            <Border Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="📋 Informations générales" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               Foreground="White" 
+                               Margin="0,0,0,20"/>
+
+                                    <TextBlock Text="Nom du tournoi" Style="{StaticResource LabelStyle}"/>
+                                    <TextBox Text="{Binding TournamentName, UpdateSourceTrigger=PropertyChanged}" 
+                             Style="{StaticResource TextBoxStyle}"/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="15"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Buy-in (€)" Style="{StaticResource LabelStyle}"/>
+                                            <TextBox Text="{Binding BuyIn, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{StaticResource TextBoxStyle}"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Jetons" Style="{StaticResource LabelStyle}"/>
+                                            <TextBox Text="{Binding StartingStack, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{StaticResource TextBoxStyle}"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <TextBlock Text="Joueurs max" Style="{StaticResource LabelStyle}"/>
+                                    <TextBox Text="{Binding MaxPlayers, UpdateSourceTrigger=PropertyChanged}" 
+                             Style="{StaticResource TextBoxStyle}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Tables -->
+                            <Border Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                <TextBlock Text="🎲 Configuration des tables" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               Foreground="White" 
+                               Margin="0,0,0,20"/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="15"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Places par table" Style="{StaticResource LabelStyle}"/>
+                                            <TextBox Text="{Binding SeatsPerTable, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{StaticResource TextBoxStyle}"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Enregistrement tardif (niveaux)" Style="{StaticResource LabelStyle}"/>
+                                            <TextBox Text="{Binding LateRegLevels, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{StaticResource TextBoxStyle}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Recaves -->
+                            <Border Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                <TextBlock Text="💰​​ Recaves" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               Foreground="White" 
+                               Margin="0,0,0,15"/>
+
+                                    <CheckBox Content="Autoriser les recaves" 
+                              IsChecked="{Binding AllowRebuys}"
+                              Foreground="White" 
+                              FontSize="15"
+                              Margin="0,0,0,15"/>
+
+                                    <StackPanel Visibility="{Binding AllowRebuys, Converter={StaticResource BoolToVisibleConverter}}">
+
+                                        <TextBlock Text="Montant recave (€)" Style="{StaticResource LabelStyle}"/>
+                                        <TextBox Text="{Binding RebuyAmount, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource TextBoxStyle}"/>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="15"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Max recaves/joueur" Style="{StaticResource LabelStyle}"/>
+                                                <TextBox Text="{Binding MaxRebuysPerPlayer, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource TextBoxStyle}"
+                                         ToolTip="0 = illimité"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="Niveau max recave" Style="{StaticResource LabelStyle}"/>
+                                                <TextBox Text="{Binding RebuyMaxLevel, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource TextBoxStyle}"
+                                         ToolTip="0 = illimité"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+
+                    </Grid>
+                </ScrollViewer>
+
+
+
+                <!-- ÉTAPE 2 : Inscription joueurs -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
@@ -522,12 +539,47 @@ Margin="0,15,0,0">
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Text="👥 Joueurs disponibles" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
-
-                        <TextBox Grid.Row="1" 
-                    Text="{Binding PlayerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                    Style="{StaticResource InputStyle}"
-                    Margin="0,0,0,10">
-                            <TextBox.Tag>🔍 Rechercher...</TextBox.Tag>
+                        <TextBox Grid.Row="1"
+         Text="{Binding PlayerSearchText, UpdateSourceTrigger=PropertyChanged}"
+         Style="{StaticResource TextBoxStyle}"
+         Margin="0,0,0,10"
+         Height="40"
+         Padding="32,0,10,0"
+         VerticalContentAlignment="Center"
+         FontSize="14"
+         Foreground="White">
+                            <TextBox.Template>
+                                <ControlTemplate TargetType="TextBox">
+                                    <Border x:Name="Bd"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="8">
+                                        <Grid>
+                                            <TextBlock Text="🔍"
+                               FontSize="16"
+                               Foreground="#a0a0a0"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Margin="10,0,0,0"
+                               IsHitTestVisible="False"/>
+                                            <ScrollViewer x:Name="PART_ContentHost"
+                                  Margin="32,0,10,0"
+                                  VerticalAlignment="Center"/>
+                                            <TextBlock Text="Rechercher un joueur..."
+                               FontSize="14"
+                               Foreground="#a0a0a0"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               Margin="32,0,0,0"
+                               IsHitTestVisible="False"
+                               Visibility="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, 
+                                            Converter={StaticResource StringToVisibilityConverter}, 
+                                            ConverterParameter=Inverse}"/>
+                                        </Grid>
+                                    </Border>
+                                </ControlTemplate>
+                            </TextBox.Template>
                         </TextBox>
 
                         <!-- Barre de sélection -->
@@ -748,7 +800,7 @@ Margin="0,15,0,0">
                 </Border>
             </Grid>
 
-            <!-- ÉTAPE 3 : Gestion des tables - VERSION AMÉLIORÉE -->
+            <!-- ÉTAPE 3 : Gestion des tables - VERSION FINALE SANS ERREURS -->
             <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
@@ -761,270 +813,334 @@ Margin="0,15,0,0">
                     </Style>
                 </Grid.Style>
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="20">
-                        <TextBlock Text="🎲 Gestion des tables" 
-                      FontSize="24" 
-                      FontWeight="Bold" 
-                      Foreground="White" 
-                      Margin="0,0,0,20"
-                      HorizontalAlignment="Center"/>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                        <!-- Panneau de contrôle -->
-                        <Border Style="{StaticResource CardStyle}" Margin="0,0,0,20">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                <!-- HEADER AVEC ACTION PRINCIPALE -->
+                <Border Grid.Row="0" Background="#0f3460" Padding="20,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                                <!-- Placement automatique -->
-                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                    <TextBlock Text="Placement automatique" 
-                                  FontSize="16" 
-                                  Foreground="White" 
-                                  FontWeight="Bold"
-                                  Margin="0,0,0,10"/>
+                        <!-- Titre et statut compact -->
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="🎲 Gestion des tables" 
+                           FontSize="22" 
+                           FontWeight="Bold" 
+                           Foreground="White"/>
 
-                                    <Button Content="🎯 Placer automatiquement"
-                               Command="{Binding AutoAssignPlayersCommand}"
-                               Height="45"
-                               Background="#00ff88"
-                               Foreground="#1a1a2e"
-                               FontSize="16"
-                               FontWeight="Bold"/>
-
-                                    <TextBlock Text="Répartit tous les joueurs équitablement" 
-                                  FontSize="12" 
-                                  Foreground="#a0a0a0"
-                                  TextWrapping="Wrap"
-                                  Margin="0,5,0,0"/>
-                                </StackPanel>
-
-                                <!-- Équilibrage -->
-                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                    <TextBlock Text="Équilibrage" 
-                                  FontSize="16" 
-                                  Foreground="White" 
-                                  FontWeight="Bold"
-                                  Margin="0,0,0,10"/>
-
-                                    <Button Content="⚖️ Équilibrer les tables"
-                               Command="{Binding BalanceTablesCommand}"
-                               Height="45"
-                               Background="#0f3460"
-                               Foreground="White"
-                               FontSize="16"
-                               FontWeight="Bold"/>
-
-                                    <TextBlock Text="Corrige les déséquilibres entre tables" 
-                                  FontSize="12" 
-                                  Foreground="#a0a0a0"
-                                  TextWrapping="Wrap"
-                                  Margin="0,5,0,0"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <!-- Statut -->
-                        <Border Style="{StaticResource CardStyle}" Margin="0,0,0,20">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="📊 Statut" 
-                                  FontSize="18" 
-                                  Foreground="White" 
-                                  FontWeight="Bold"
-                                  Margin="0,0,0,10"/>
-
-                                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                                        <TextBlock Text="Tables actives : " Foreground="#a0a0a0" FontSize="14"/>
-                                        <TextBlock Text="{Binding TableCount}" Foreground="#00ff88" FontSize="14" FontWeight="Bold"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Border Background="#1a3a52" CornerRadius="12" Padding="10,4" Margin="0,0,10,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding TableCount}" 
+                                       Foreground="#00ff88" 
+                                       FontSize="14" 
+                                       FontWeight="Bold"/>
+                                        <TextBlock Text=" tables" 
+                                       Foreground="#a0a0a0" 
+                                       FontSize="14" 
+                                       Margin="3,0,0,0"/>
                                     </StackPanel>
+                                </Border>
 
-                                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                                        <TextBlock Text="Joueurs placés : " Foreground="#a0a0a0" FontSize="14"/>
-                                        <TextBlock FontSize="14" FontWeight="Bold">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="❌ Non"/>
-                                                    <Setter Property="Foreground" Value="#e94560"/>
+                                <Border Background="#1a3a52" CornerRadius="12" Padding="10,4">
+                                    <TextBlock FontSize="14" FontWeight="Bold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="❌ Joueurs non placés"/>
+                                                <Setter Property="Foreground" Value="#e94560"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AllPlayersAssigned}" Value="True">
+                                                        <Setter Property="Text" Value="✅ Tous placés"/>
+                                                        <Setter Property="Foreground" Value="#00ff88"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- BOUTON PRINCIPAL avec Border pour CornerRadius -->
+                        <Border Grid.Column="1"
+                    Background="#00ff88"
+                    CornerRadius="8"
+                    VerticalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#00ff88" BlurRadius="15" ShadowDepth="0" Opacity="0.4"/>
+                            </Border.Effect>
+
+                            <Button Content="🎯 Placer automatiquement"
+                        Command="{Binding AutoAssignPlayersCommand}"
+                        Height="55"
+                        MinWidth="240"
+                        Background="Transparent"
+                        Foreground="#1a1a2e"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        BorderThickness="0"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- ZONE PRINCIPALE: PREVIEW DES TABLES avec ScrollViewer -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <!-- Le Padding est sur le Border, PAS sur le Grid -->
+                    <Border Padding="20">
+                        <StackPanel>
+
+                            <!-- Info rapide drag & drop -->
+                            <Border Background="#16213e" 
+                        BorderBrush="#00ff88" 
+                        BorderThickness="1" 
+                        CornerRadius="8" 
+                        Padding="12" 
+                        Margin="0,0,0,20"
+                        Opacity="0.8">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="💡" FontSize="16" Margin="0,0,8,0"/>
+                                    <TextBlock TextWrapping="Wrap" Foreground="#a0a0a0" FontSize="13">
+                            <Bold>Clic droit</Bold> sur un joueur pour le déplacer ou verrouiller • 
+                            <Bold>🔒 Verrouillé</Bold> = protégé de l'équilibrage auto
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- GRILLE DES TABLES -->
+                            <ItemsControl ItemsSource="{Binding TableLayouts}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <!-- Border avec Style conditionnel fusionné -->
+                                        <Border Background="#16213e"
+                                    CornerRadius="15"
+                                    Padding="20"
+                                    Margin="10"
+                                    Width="340"
+                                    BorderThickness="2">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="BorderBrush" Value="Transparent"/>
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding AllPlayersAssigned}" Value="True">
-                                                            <Setter Property="Text" Value="✅ Oui"/>
-                                                            <Setter Property="Foreground" Value="#00ff88"/>
+                                                        <!-- Highlight si table déséquilibrée -->
+                                                        <DataTrigger Binding="{Binding IsBalanced}" Value="False">
+                                                            <Setter Property="BorderBrush" Value="#e94560"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </StackPanel>
+                                            </Border.Style>
 
-                                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                                        <TextBlock Text="Équilibre : " Foreground="#a0a0a0" FontSize="14"/>
-                                        <TextBlock Text="{Binding BalanceStatus}" FontSize="14" FontWeight="Bold" Foreground="White"/>
-                                    </StackPanel>
-                                </StackPanel>
+                                            <StackPanel>
+                                                <!-- Header table -->
+                                                <Grid Background="#0f3460" Margin="-20,-20,-20,0">
+                                                    <Border Padding="15,12">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
 
-                                <Button Grid.Column="1"
-                           Content="🔄"
-                           Command="{Binding RefreshTablesCommand}"
-                           Width="50" Height="50"
-                           Background="#0f3460"
-                           Foreground="White"
-                           FontSize="20"
-                           VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
+                                                            <TextBlock Grid.Column="0"
+                                                           Text="{Binding TableNumber, StringFormat='TABLE {0}'}" 
+                                                           FontSize="18" 
+                                                           FontWeight="Bold" 
+                                                           Foreground="#00ff88"
+                                                           VerticalAlignment="Center"/>
 
-                        <!-- Info drag & drop -->
-                        <Border Background="#16213e" 
-                   BorderBrush="#00ff88" 
-                   BorderThickness="2" 
-                   CornerRadius="10" 
-                   Padding="15" 
-                   Margin="0,0,0,15">
-                            <StackPanel>
-                                <TextBlock Text="💡 Gestion manuelle" 
-                              FontSize="16" 
-                              FontWeight="Bold" 
-                              Foreground="#00ff88" 
-                              Margin="0,0,0,10"/>
-                                <TextBlock TextWrapping="Wrap" Foreground="#a0a0a0" FontSize="13">
-                        • <Bold>Clic droit</Bold> sur un joueur → menu contextuel (déplacer, verrouiller)
-                                </TextBlock>
-                                <TextBlock TextWrapping="Wrap" Foreground="#a0a0a0" FontSize="13" Margin="0,5,0,0">
-                        • <Bold>🔒 Verrouiller</Bold> un joueur l'empêche d'être déplacé par l'équilibrage automatique
-                                </TextBlock>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Liste des tables -->
-                        <ItemsControl ItemsSource="{Binding TableLayouts}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Style="{StaticResource CardStyle}" Width="320" Margin="5">
-                                        <StackPanel>
-                                            <!-- Header de la table -->
-                                            <Border Background="#0f3460" CornerRadius="8" Padding="10" Margin="0,0,0,10">
-                                                <Grid>
-                                                    <TextBlock Text="{Binding TableNumber, StringFormat='TABLE {0}'}" 
-                                                  FontSize="20" 
-                                                  FontWeight="Bold" 
-                                                  Foreground="#00ff88"
-                                                  HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"/>
+                                                            <!-- Compteur joueurs -->
+                                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding PlayerCount}" 
+                                                               FontSize="24" 
+                                                               FontWeight="Bold" 
+                                                               Foreground="White"/>
+                                                                <TextBlock Text="{Binding MaxSeats, StringFormat='/{0}'}" 
+                                                               FontSize="16" 
+                                                               Foreground="#a0a0a0"
+                                                               VerticalAlignment="Center"
+                                                               Margin="2,0,0,0"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
                                                 </Grid>
-                                            </Border>
 
-                                            <!-- Compteur de joueurs -->
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
-                                                <TextBlock Text="{Binding PlayerCount}" 
-                                              FontSize="28" 
-                                              FontWeight="Bold" 
-                                              Foreground="White"/>
-                                                <TextBlock Text="{Binding MaxSeats, StringFormat=' / {0}'}" 
-                                              FontSize="18" 
-                                              Foreground="#a0a0a0"
-                                              VerticalAlignment="Bottom"
-                                              Margin="5,0,0,3"/>
-                                                <TextBlock Text=" joueurs" 
-                                              FontSize="14" 
-                                              Foreground="#a0a0a0"
-                                              VerticalAlignment="Bottom"
-                                              Margin="3,0,0,3"/>
+                                                <!-- Sièges -->
+                                                <ItemsControl ItemsSource="{Binding Seats}" Margin="0,12,0,0">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="#0f3460" 
+                                                        CornerRadius="6" 
+                                                        Padding="12,10" 
+                                                        Margin="0,4"
+                                                        MouseRightButtonUp="Seat_RightClick"
+                                                        Tag="{Binding}">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsOccupied}" Value="True">
+                                                                                <Setter Property="Background" Value="#1a3a52"/>
+                                                                                <Setter Property="Cursor" Value="Hand"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                                                                <Setter Property="BorderBrush" Value="#ffd700"/>
+                                                                                <Setter Property="BorderThickness" Value="2"/>
+                                                                            </DataTrigger>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter Property="Background" Value="#2a4a62"/>
+                                                                            </Trigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="32"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+
+                                                                    <TextBlock Grid.Column="0" 
+                                                                   Text="{Binding SeatNumber, StringFormat='#{0}'}" 
+                                                                   Foreground="#00ff88" 
+                                                                   FontSize="12"
+                                                                   FontWeight="Bold"
+                                                                   VerticalAlignment="Center"/>
+
+                                                                    <TextBlock Grid.Column="1" 
+                                                                   Text="{Binding PlayerName}" 
+                                                                   Foreground="White" 
+                                                                   FontSize="14"
+                                                                   FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="8,0">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding IsOccupied}" Value="False">
+                                                                                        <Setter Property="Text" Value="— vide —"/>
+                                                                                        <Setter Property="FontStyle" Value="Italic"/>
+                                                                                        <Setter Property="Foreground" Value="#404040"/>
+                                                                                        <Setter Property="FontWeight" Value="Normal"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+
+                                                                    <TextBlock Grid.Column="2"
+                                                                   Text="🔒"
+                                                                   FontSize="13"
+                                                                   VerticalAlignment="Center"
+                                                                   Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisConverter}}"/>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
                                             </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
 
-                                            <!-- Sièges -->
-                                            <ItemsControl ItemsSource="{Binding Seats}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border Background="#0f3460" 
-                                                   CornerRadius="6" 
-                                                   Padding="10,8" 
-                                                   Margin="0,3"
-                                                   MouseRightButtonUp="Seat_RightClick"
-                                                   Tag="{Binding}">
-                                                            <Border.Style>
-                                                                <Style TargetType="Border">
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding IsOccupied}" Value="True">
-                                                                            <Setter Property="Background" Value="#1a3a52"/>
-                                                                            <Setter Property="Cursor" Value="Hand"/>
-                                                                        </DataTrigger>
-                                                                        <DataTrigger Binding="{Binding IsLocked}" Value="True">
-                                                                            <Setter Property="BorderBrush" Value="#ffd700"/>
-                                                                            <Setter Property="BorderThickness" Value="2"/>
-                                                                        </DataTrigger>
-                                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                                            <Setter Property="Background" Value="#2a4a62"/>
-                                                                        </Trigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </Border.Style>
+                            <!-- CONTRÔLES SECONDAIRES (REPLIABLE) -->
+                            <Expander Header="⚙️ Options avancées" 
+                          Margin="0,30,0,0"
+                          Foreground="White"
+                          FontSize="15"
+                          FontWeight="SemiBold">
+                                <Border Background="#16213e"
+                            CornerRadius="15"
+                            Padding="20"
+                            Margin="10,10,10,0">
+                                    <StackPanel>
 
-                                                            <Grid>
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="35"/>
-                                                                    <ColumnDefinition Width="*"/>
-                                                                    <ColumnDefinition Width="Auto"/>
-                                                                </Grid.ColumnDefinitions>
+                                        <!-- Équilibrage -->
+                                        <StackPanel Margin="0,0,0,15">
+                                            <TextBlock Text="⚖️ Équilibrage des tables" 
+                                           FontSize="15" 
+                                           Foreground="White" 
+                                           FontWeight="SemiBold"
+                                           Margin="0,0,0,8"/>
 
-                                                                <TextBlock Grid.Column="0" 
-                                                              Text="{Binding SeatNumber, StringFormat='#{0}'}" 
-                                                              Foreground="#00ff88" 
-                                                              FontSize="13"
-                                                              FontWeight="Bold"
-                                                              VerticalAlignment="Center"/>
+                                            <Button Content="Équilibrer maintenant"
+                                        Command="{Binding BalanceTablesCommand}"
+                                        Height="40"
+                                        Background="#0f3460"
+                                        Foreground="White"
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        HorizontalAlignment="Stretch"/>
 
-                                                                <TextBlock Grid.Column="1" 
-                                                              Text="{Binding PlayerName}" 
-                                                              Foreground="White" 
-                                                              FontSize="14"
-                                                              FontWeight="Bold"
-                                                              VerticalAlignment="Center"
-                                                              Margin="5,0">
-                                                                    <TextBlock.Style>
-                                                                        <Style TargetType="TextBlock">
-                                                                            <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding IsOccupied}" Value="False">
-                                                                                    <Setter Property="Text" Value="(vide)"/>
-                                                                                    <Setter Property="FontStyle" Value="Italic"/>
-                                                                                    <Setter Property="Foreground" Value="#505050"/>
-                                                                                    <Setter Property="FontWeight" Value="Normal"/>
-                                                                                </DataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </TextBlock.Style>
-                                                                </TextBlock>
-
-                                                                <TextBlock Grid.Column="2"
-                                                              Text="🔒"
-                                                              FontSize="14"
-                                                              VerticalAlignment="Center"
-                                                              Visibility="{Binding IsLocked, Converter={StaticResource BoolToVisConverter}}"/>
-                                                            </Grid>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
+                                            <TextBlock Text="Corrige les déséquilibres entre tables (respecte les joueurs verrouillés)" 
+                                           FontSize="11" 
+                                           Foreground="#808080"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,0"/>
                                         </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
+
+                                        <!-- Statut détaillé -->
+                                        <Border Background="#0f3460" 
+                                    CornerRadius="6" 
+                                    Padding="12"
+                                    BorderBrush="#1a3a52"
+                                    BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="📊 Statut détaillé" 
+                                               FontSize="14" 
+                                               Foreground="White" 
+                                               FontWeight="SemiBold"
+                                               Margin="0,0,0,8"/>
+
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0">
+                                                        <StackPanel Orientation="Horizontal" Margin="0,3">
+                                                            <TextBlock Text="Tables actives : " Foreground="#a0a0a0" FontSize="13"/>
+                                                            <TextBlock Text="{Binding TableCount}" Foreground="#00ff88" FontSize="13" FontWeight="Bold"/>
+                                                        </StackPanel>
+
+                                                        <StackPanel Orientation="Horizontal" Margin="0,3">
+                                                            <TextBlock Text="État : " Foreground="#a0a0a0" FontSize="13"/>
+                                                            <TextBlock Text="{Binding BalanceStatus}" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                    <Button Grid.Column="1"
+                                                Content="🔄"
+                                                Command="{Binding RefreshTablesCommand}"
+                                                Width="40" 
+                                                Height="40"
+                                                Background="#1a3a52"
+                                                Foreground="White"
+                                                FontSize="16"
+                                                VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+
+                                    </StackPanel>
+                                </Border>
+                            </Expander>
+
+                        </StackPanel>
+                    </Border>
                 </ScrollViewer>
             </Grid>
+
+
 
             <!-- ÉTAPE 4 : Résumé et lancement -->
             <Grid>
@@ -1087,7 +1203,6 @@ Margin="0,15,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
@@ -1101,14 +1216,6 @@ Margin="0,15,0,0">
                        FontSize="16"
                        FontWeight="Bold"
                        Visibility="{Binding CurrentStep, Converter={StaticResource ZeroToCollapsedConverter}}"/>
-
-                <Button Grid.Column="1"
-                       Content="Annuler le tournoi"
-                       Command="{Binding CancelTournamentCommand}"
-                       Width="180" Height="45"
-                       Background="#16213e"
-                       Foreground="#e94560"
-                       FontSize="14"/>
 
                 <Button Grid.Column="2" 
                        Content="Suivant →"

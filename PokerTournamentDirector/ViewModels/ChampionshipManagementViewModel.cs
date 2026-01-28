@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using PokerTournamentDirector.Data;
 using PokerTournamentDirector.Models;
 using PokerTournamentDirector.Services;
 using PokerTournamentDirector.Views;
@@ -182,8 +184,8 @@ namespace PokerTournamentDirector.ViewModels
                 CustomMessageBox.ShowWarning("Veuillez sélectionner un championnat.", "Sélection requise");
                 return;
             }
-
-            var dashboard = new ChampionshipDashboardView(SelectedChampionship.Id, _championshipService);
+            var context = App.Services.GetRequiredService<PokerDbContext>();
+            var dashboard = new ChampionshipDashboardView(SelectedChampionship.Id, _championshipService, context);
             dashboard.Show();
         }
 

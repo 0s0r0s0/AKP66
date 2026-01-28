@@ -40,6 +40,7 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty] private decimal _editRebuyAmount = 20;
         [ObservableProperty] private int _editRebuyLimit = 3;
         [ObservableProperty] private int _editRebuyMaxLevel = 6;
+        [ObservableProperty] private int _editMaxRebuysPerPlayer = 3;
 
         // Add-ons
         [ObservableProperty] private bool _editAllowAddOn = false;
@@ -132,6 +133,7 @@ namespace PokerTournamentDirector.ViewModels
             EditAllowRebuys = template.AllowRebuys;
             EditRebuyAmount = template.RebuyAmount ?? template.BuyIn;
             EditRebuyLimit = template.RebuyLimit ?? 3;
+            EditMaxRebuysPerPlayer = template.MaxRebuysPerPlayer;
             EditRebuyMaxLevel = template.RebuyMaxLevel ?? 6;
             EditAllowAddOn = template.AllowAddOn;
             EditAddOnAmount = template.AddOnAmount ?? template.BuyIn;
@@ -195,6 +197,7 @@ namespace PokerTournamentDirector.ViewModels
             EditAllowRebuys = false;
             EditRebuyAmount = 20;
             EditRebuyLimit = 3;
+            EditMaxRebuysPerPlayer = 3;
             EditRebuyMaxLevel = 6;
             EditAllowAddOn = false;
             EditAddOnAmount = 10;
@@ -251,6 +254,7 @@ namespace PokerTournamentDirector.ViewModels
                         RebuyAmount = EditAllowRebuys && EditType == TournamentTemplateType.Cash ? EditRebuyAmount : null,
                         RebuyLimit = EditAllowRebuys ? EditRebuyLimit : null,
                         RebuyMaxLevel = EditAllowRebuys ? EditRebuyMaxLevel : null,
+                        MaxRebuysPerPlayer = EditAllowRebuys ? EditMaxRebuysPerPlayer : 0,
                         AllowAddOn = EditAllowAddOn,
                         AddOnAmount = EditAllowAddOn && EditType == TournamentTemplateType.Cash ? EditAddOnAmount : null,
                         AddOnStack = EditAllowAddOn ? EditAddOnStack : null,
@@ -280,6 +284,7 @@ namespace PokerTournamentDirector.ViewModels
                     SelectedTemplate.RebuyAmount = EditAllowRebuys && EditType == TournamentTemplateType.Cash ? EditRebuyAmount : null;
                     SelectedTemplate.RebuyLimit = EditAllowRebuys ? EditRebuyLimit : null;
                     SelectedTemplate.RebuyMaxLevel = EditAllowRebuys ? EditRebuyMaxLevel : null;
+                    SelectedTemplate.MaxRebuysPerPlayer = EditAllowRebuys ? EditMaxRebuysPerPlayer : 0;
                     SelectedTemplate.AllowAddOn = EditAllowAddOn;
                     SelectedTemplate.AddOnAmount = EditAllowAddOn && EditType == TournamentTemplateType.Cash ? EditAddOnAmount : null;
                     SelectedTemplate.AddOnStack = EditAllowAddOn ? EditAddOnStack : null;

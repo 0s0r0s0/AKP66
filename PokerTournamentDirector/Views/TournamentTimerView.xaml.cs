@@ -1005,7 +1005,7 @@ namespace PokerTournamentDirector.Views
 
         private void InitializeDialog()
         {
-            Title = "🪑 Plan des Tables";
+            Title = "🎲 Plan des Tables";
             Width = 1400;
             Height = 950;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -1034,7 +1034,7 @@ namespace PokerTournamentDirector.Views
             };
             header.Child = new TextBlock
             {
-                Text = "🪑 PLAN DES TABLES",
+                Text = "🎲 PLAN DES TABLES",
                 FontSize = 32,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,

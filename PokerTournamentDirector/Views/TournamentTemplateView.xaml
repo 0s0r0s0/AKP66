@@ -395,8 +395,8 @@
                                              IsEnabled="{Binding ShowFinanceSection}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="0,0,8,0">
-                                    <TextBlock Text="Limite (0 = illimité)" Style="{StaticResource LabelStyle}"/>
-                                    <TextBox Text="{Binding EditRebuyLimit}" Style="{StaticResource TextBoxStyle}"/>
+                                    <TextBlock Text="Nombre de recave(s) par joueur" Style="{StaticResource LabelStyle}"/>
+                                    <TextBox Text="{Binding EditMaxRebuysPerPlayer}" Style="{StaticResource TextBoxStyle}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Jusqu'au niveau" Style="{StaticResource LabelStyle}"/>

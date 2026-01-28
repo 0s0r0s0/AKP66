@@ -11,13 +11,17 @@ namespace PokerTournamentDirector.Views
 
         public ChampionshipDashboardView(
             int championshipId,
-            ChampionshipService championshipService)
+            ChampionshipService championshipService,
+            PokerDbContext context) 
         {
             InitializeComponent();
             _viewModel = new ChampionshipDashboardViewModel(
-                championshipService, championshipId );
+                championshipService,
+                context,
+                championshipId);
             DataContext = _viewModel;
             Loaded += async (s, e) => await _viewModel.InitializeAsync();
+            Closed += (s, e) => _viewModel.Dispose(); 
         }
     }
 }

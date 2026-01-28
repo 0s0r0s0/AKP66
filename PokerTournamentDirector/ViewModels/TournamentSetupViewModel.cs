@@ -48,7 +48,7 @@ namespace PokerTournamentDirector.ViewModels
         private int _currentStep = 1;
 
         [ObservableProperty]
-        private string _stepTitle = "Configuration du tournoi";
+        private string _stepTitle = "Configuration tournoi";
 
         // === ÉTAPE 1 : Configuration ===
         [ObservableProperty]
@@ -555,10 +555,10 @@ namespace PokerTournamentDirector.ViewModels
                 CurrentStep--;
                 StepTitle = CurrentStep switch
                 {
-                    1 => "Configuration du tournoi",
-                    2 => "Inscription des joueurs",
-                    3 => "Gestion des tables",
-                    _ => "Prêt à démarrer"
+                    1 => "Tournoi",
+                    2 => "Joueurs",
+                    3 => "Tables",
+                    _ => "Lancement"
                 };
             }
         }
