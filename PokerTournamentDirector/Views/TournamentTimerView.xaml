@@ -142,7 +142,7 @@
 
                 <!-- Raccourcis clavier -->
                 <TextBlock Grid.Column="2"
-                           Text="[S] Start/Pause | [E] Élim. | [P] Joueurs | [B] Blinds | [→] Next | [←] Précédent | [ESC] Quitter" 
+                           Text="[S] Start/Pause | [K] Élim./Recave | [P] Joueurs | [B] Blinds | [M] Modifier Blinds [→] Niveau suivant | [←] Précédent | [ESC] Quitter" 
                            FontSize="14" 
                            Foreground="#a0a0a0"
                            HorizontalAlignment="Right" 
@@ -497,7 +497,7 @@
                     <ColumnDefinition Width="2*"/>
                     <!-- Centre: Actions principales / Bouton Fermer -->
                     <ColumnDefinition Width="*"/>
-                    <!-- Droite: Éliminations/Joueurs/Tables -->
+                    <!-- Droite: Éliminations/Joueurs/Tables/Blinds -->
                 </Grid.ColumnDefinitions>
 
                 <!-- GAUCHE: Navigation niveaux (discrets) -->
@@ -598,15 +598,15 @@
                     </Button>
                 </Grid>
 
-                <!-- DROITE: Éliminations / Joueurs / Tables -->
+                <!-- DROITE: Éliminations / Joueurs / Tables / blinds-->
                 <StackPanel Grid.Column="2" 
                     Orientation="Horizontal" 
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                             Visibility="{Binding IsTournamentFinished, Converter={StaticResource BoolToCollapsedConverter}}">
-                    <Button Content="💀 ÉLIMINATIONS" 
+                    <Button Content="💀 KILL" 
                     Click="Eliminations_Click"
-                    Width="150" 
+                    Width="100" 
                     Height="50"
                     Background="#e94560" 
                     Foreground="White"
@@ -616,9 +616,9 @@
                     Margin="5,0"
                     Cursor="Hand"/>
 
-                    <Button Content="👥 JOUEURS" 
+                    <Button Content="👥 INSCRIRE" 
                     Click="Players_Click"
-                    Width="145" 
+                    Width="100" 
                     Height="50"
                     Background="#0f3460" 
                     Foreground="White"
@@ -631,7 +631,7 @@
 
                     <Button Content="🎱 TABLES" 
                     Click="Settings_Click"
-                    Width="145" 
+                    Width="100" 
                     Height="50"
                     Background="#0f3460" 
                     Foreground="White"
@@ -640,6 +640,19 @@
                     BorderThickness="0"
                     Margin="5,0"
                     Cursor="Hand"/>
+
+                    <Button Content="📊 BLINDS" 
+Command="{Binding ShowBlindStructureCommand}"
+ToolTip="Voir la structure complète des blinds"
+Width="100" 
+Height="50"
+Background="#0f3460" 
+Foreground="White"
+FontSize="16"
+FontWeight="SemiBold"
+BorderThickness="0"
+Margin="5,0"
+Cursor="Hand"/>
                 </StackPanel>
             </Grid>
         </Border>

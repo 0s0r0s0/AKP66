@@ -740,6 +740,37 @@ namespace PokerTournamentDirector.ViewModels
             SaveStateAsync();
         }
 
+        [RelayCommand]
+        private void ShowBlindStructure()
+        {
+            var viewModel = new BlindStructureViewModel
+            {
+                TournamentName = TournamentName,
+                CurrentLevel = CurrentLevel,
+                TotalLevels = TotalLevels,
+                BlindLevels = new ObservableCollection<BlindLevelDisplay>(
+                    BlindLevels.Select(bl => new BlindLevelDisplay
+                    {
+                        LevelNumber = bl.LevelNumber,
+                        SmallBlind = bl.SmallBlind,
+                        BigBlind = bl.BigBlind,
+                        Ante = bl.Ante,
+                        DurationMinutes = bl.DurationMinutes,
+                        IsBreak = bl.IsBreak,
+                        BreakName = bl.BreakName,
+                        IsCurrentLevel = bl.LevelNumber == CurrentLevel
+                    })
+                )
+            };
+
+            var window = new BlindStructureView
+            {
+                DataContext = viewModel,
+                Owner = Application.Current.MainWindow
+            };
+
+            window.ShowDialog();
+        }
         #endregion
 
         #region Sauvegarde et Restauration d'État

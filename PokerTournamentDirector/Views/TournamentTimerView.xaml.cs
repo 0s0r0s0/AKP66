@@ -95,6 +95,10 @@ namespace PokerTournamentDirector.Views
                     break;
 
                 case Key.B:
+                    _viewModel.ShowBlindStructureCommand.Execute(null);
+                    break;
+
+                case Key.M:
                     EditBlinds_Click(this, new RoutedEventArgs());
                     break;
 
