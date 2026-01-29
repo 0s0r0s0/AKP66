@@ -65,13 +65,14 @@ namespace PokerTournamentDirector.Services
 
         public async Task RegisterPlayerAsync(int tournamentId, int playerId)
         {
-            var tournament = await GetTournamentAsync(tournamentId);
-            if (tournament == null) throw new InvalidOperationException("Tournament not found");
+            var tournament = await _context.Tournaments
+                .Include(t => t.Players)
+                .FirstOrDefaultAsync(t => t.Id == tournamentId);
 
-            var existingRegistration = await _context.TournamentPlayers
-                .FirstOrDefaultAsync(tp => tp.TournamentId == tournamentId && tp.PlayerId == playerId);
+            if (tournament == null)
+                throw new InvalidOperationException("Tournament not found");
 
-            if (existingRegistration != null)
+            if (tournament.Players.Any(tp => tp.PlayerId == playerId))
                 throw new InvalidOperationException("Player already registered");
 
             var tournamentPlayer = new TournamentPlayer
@@ -82,6 +83,37 @@ namespace PokerTournamentDirector.Services
             };
 
             _context.TournamentPlayers.Add(tournamentPlayer);
+            await _context.SaveChangesAsync();
+
+            // CORRECTION : Recalculer les positions des joueurs éliminés
+            await RecalculateEliminatedPositionsAsync(tournamentId);
+        }
+
+        private async Task RecalculateEliminatedPositionsAsync(int tournamentId)
+        {
+            // Récupérer TOUS les joueurs du tournoi
+            var allPlayers = await _context.TournamentPlayers
+                .Where(tp => tp.TournamentId == tournamentId)
+                .OrderByDescending(tp => tp.EliminationTime) // Plus récent d'abord
+                .ToListAsync();
+
+            var totalPlayers = allPlayers.Count;
+            var activePlayers = allPlayers.Where(tp => !tp.IsEliminated).Count();
+
+            // Recalculer les positions des éliminés
+            var eliminatedPlayers = allPlayers
+                .Where(tp => tp.IsEliminated)
+                .OrderByDescending(tp => tp.EliminationTime)
+                .ToList();
+
+            int currentPosition = activePlayers + 1; // La prochaine position disponible
+
+            foreach (var player in eliminatedPlayers)
+            {
+                player.FinishPosition = currentPosition;
+                currentPosition++;
+            }
+
             await _context.SaveChangesAsync();
         }
 
@@ -94,6 +126,9 @@ namespace PokerTournamentDirector.Services
             {
                 _context.TournamentPlayers.Remove(registration);
                 await _context.SaveChangesAsync();
+
+                // CORRECTION : Recalculer les positions après désinscription
+                await RecalculateEliminatedPositionsAsync(tournamentId);
             }
         }
 
@@ -109,30 +144,40 @@ namespace PokerTournamentDirector.Services
 
         public async Task EliminatePlayerAsync(int tournamentPlayerId, int? eliminatedByPlayerId = null)
         {
-            var tournamentPlayer = await _context.TournamentPlayers.FindAsync(tournamentPlayerId);
-            if (tournamentPlayer == null) throw new InvalidOperationException("Player not found");
+            var tournamentPlayer = await _context.TournamentPlayers
+                .Include(tp => tp.Tournament)
+                .FirstOrDefaultAsync(tp => tp.Id == tournamentPlayerId);
+
+            if (tournamentPlayer == null)
+                throw new InvalidOperationException("Player not found");
 
             var activePlayers = await GetActivePlayers(tournamentPlayer.TournamentId);
+            var totalPlayers = await _context.TournamentPlayers
+                .CountAsync(tp => tp.TournamentId == tournamentPlayer.TournamentId);
 
             tournamentPlayer.IsEliminated = true;
             tournamentPlayer.EliminationTime = DateTime.Now;
-            tournamentPlayer.FinishPosition = activePlayers.Count;
-            tournamentPlayer.EliminatedByPlayerId = eliminatedByPlayerId;
+            tournamentPlayer.FinishPosition = activePlayers.Count; // Position temporaire
 
-            // AJOUTER : Si c'est le dernier joueur (il reste 1 actif après élimination)
-            if (activePlayers.Count == 2) // 2 actifs avant élimination = 1 après
+            // Si c'est le dernier joueur éliminé (il en reste 1)
+            if (activePlayers.Count == 2)
             {
                 var winner = activePlayers.FirstOrDefault(p => p.Id != tournamentPlayerId);
                 if (winner != null)
                 {
                     winner.FinishPosition = 1;
-                    winner.IsEliminated = false; // Garder actif pour affichage
+                    winner.IsEliminated = false;
                 }
             }
 
+            // Bounty
             if (eliminatedByPlayerId.HasValue)
             {
-                var killer = await _context.TournamentPlayers.FindAsync(eliminatedByPlayerId.Value);
+                tournamentPlayer.EliminatedByPlayerId = eliminatedByPlayerId.Value;
+
+                var killer = await _context.TournamentPlayers
+                    .FirstOrDefaultAsync(tp => tp.Id == eliminatedByPlayerId.Value);
+
                 if (killer != null)
                 {
                     killer.BountyKills++;
@@ -140,6 +185,9 @@ namespace PokerTournamentDirector.Services
             }
 
             await _context.SaveChangesAsync();
+
+            // CORRECTION : Recalculer toutes les positions
+            await RecalculateEliminatedPositionsAsync(tournamentPlayer.TournamentId);
         }
 
         // ==================== TABLES & SEATING ====================

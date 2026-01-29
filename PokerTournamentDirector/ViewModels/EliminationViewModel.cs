@@ -142,86 +142,41 @@ namespace PokerTournamentDirector.ViewModels
 
             var history = new List<HistoryItem>();
 
-            // Récupérer tous les logs du tournoi
-            var logs = await _context.TournamentLogs
-                .Where(l => l.TournamentId == _tournamentId)
-                .OrderByDescending(l => l.Timestamp)
-                .ToListAsync();
+            var eliminated = _tournament!.Players
+                .Where(p => p.IsEliminated && p.FinishPosition.HasValue)
+                .OrderByDescending(p => p.EliminationTime ?? DateTime.Now);
 
-            foreach (var log in logs)
+            foreach (var player in eliminated)
             {
-                switch (log.Action)
+                var killer = player.EliminatedByPlayerId.HasValue
+                    ? _tournament.Players.FirstOrDefault(p => p.Id == player.EliminatedByPlayerId.Value)
+                    : null;
+
+                history.Add(new HistoryItem
                 {
-                    case "Élimination":
-                        // Parser: "PlayerName éliminé #Position par KillerName"
-                        var eliminationParts = log.Details.Split(new[] { " éliminé #", " par " }, StringSplitOptions.None);
-                        if (eliminationParts.Length >= 2)
+                    Position = player.FinishPosition!.Value,
+                    PlayerName = player.Player?.Name ?? "Inconnu",
+                    KillerName = killer?.Player?.Name ?? "Aucun",
+                    ActionType = "💀 Élimination",
+                    IsRebuy = false,
+                    Timestamp = player.EliminationTime ?? DateTime.Now
+                });
+
+                // Ajouter les recaves
+                if (player.RebuyCount > 0)
+                {
+                    for (int i = 0; i < player.RebuyCount; i++)
+                    {
+                        history.Add(new HistoryItem
                         {
-                            var playerName = eliminationParts[0];
-                            var positionStr = eliminationParts[1].Split(' ')[0];
-                            var killerName = eliminationParts.Length > 2 ? eliminationParts[2] : "Aucun";
-
-                            if (int.TryParse(positionStr, out int position))
-                            {
-                                history.Add(new HistoryItem
-                                {
-                                    Position = position,
-                                    PlayerName = playerName,
-                                    KillerName = killerName,
-                                    ActionType = "💀 Élimination",
-                                    IsRebuy = false,
-                                    IsUndo = false,
-                                    Timestamp = log.Timestamp
-                                });
-                            }
-                        }
-                        break;
-
-                    case "Recave":
-                        // Parser: "PlayerName - €X"
-                        var rebuyParts = log.Details.Split(new[] { " - " }, StringSplitOptions.None);
-                        if (rebuyParts.Length >= 1)
-                        {
-                            var playerName = rebuyParts[0];
-                            var amount = rebuyParts.Length > 1 ? rebuyParts[1] : "";
-
-                            history.Add(new HistoryItem
-                            {
-                                Position = 0, // Pas de position pour une recave
-                                PlayerName = playerName,
-                                KillerName = "",
-                                ActionType = $"💰 Recave {amount}",
-                                IsRebuy = true,
-                                IsUndo = false,
-                                Timestamp = log.Timestamp
-                            });
-                        }
-                        break;
-
-                    case "Annulation élimination":
-                        // Parser: "PlayerName (#Position) - Killer: KillerName"
-                        var undoParts = log.Details.Split(new[] { " (#", ") - Killer: " }, StringSplitOptions.None);
-                        if (undoParts.Length >= 2)
-                        {
-                            var playerName = undoParts[0];
-                            var positionStr = undoParts[1];
-                            var killerName = undoParts.Length > 2 ? undoParts[2] : "Aucun";
-
-                            if (int.TryParse(positionStr, out int position))
-                            {
-                                history.Add(new HistoryItem
-                                {
-                                    Position = position,
-                                    PlayerName = playerName,
-                                    KillerName = killerName,
-                                    ActionType = "↩️ Annulation",
-                                    IsRebuy = false,
-                                    IsUndo = true,
-                                    Timestamp = log.Timestamp
-                                });
-                            }
-                        }
-                        break;
+                            Position = player.FinishPosition.Value,
+                            PlayerName = player.Player?.Name ?? "Inconnu",
+                            KillerName = "",
+                            ActionType = $"💰 Recave #{i + 1}",
+                            IsRebuy = true,
+                            Timestamp = (player.EliminationTime ?? DateTime.Now).AddSeconds(i + 1)
+                        });
+                    }
                 }
             }
 
@@ -229,7 +184,7 @@ namespace PokerTournamentDirector.ViewModels
             foreach (var item in history.OrderByDescending(h => h.Timestamp))
                 EliminationHistory.Add(item);
 
-            TotalEliminations = _tournament.Players.Count(p => p.IsEliminated && p.FinishPosition.HasValue);
+            TotalEliminations = eliminated.Count();
         }
 
         [RelayCommand]
