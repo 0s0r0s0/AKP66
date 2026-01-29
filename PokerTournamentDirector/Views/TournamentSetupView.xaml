@@ -286,28 +286,50 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- 2. STRUCTURE DE BLINDS -->
-                            <Border Style="{StaticResource CardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="⏱️ Structure de blinds" 
-                               FontSize="20" 
-                               FontWeight="Bold" 
-                               Foreground="White" 
-                               Margin="0,0,0,15"/>
+                        <!-- 2. STRUCTURE DE BLINDS -->
+                        <Border Style="{StaticResource CardStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
+                                <!-- Colonne principale : label + ComboBox -->
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="⏱️ Structure de blinds"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Foreground="White"
+                       Margin="0,0,0,15"/>
                                     <ComboBox ItemsSource="{Binding AvailableBlindStructures}"
-                              SelectedItem="{Binding SelectedBlindStructure}"
-                              DisplayMemberPath="Name"
-                              Style="{StaticResource ComboBoxStyle}"
-                              Height="45"
-                              Padding="12"
-                              VerticalContentAlignment="Center"
-                              FontSize="15"
-                              FontWeight="SemiBold"/>
+                      SelectedItem="{Binding SelectedBlindStructure}"
+                      DisplayMemberPath="Name"
+                      Style="{StaticResource ComboBoxStyle}"
+                      Height="45"
+                      Padding="12"
+                      VerticalContentAlignment="Center"
+                      FontSize="15"
+                      FontWeight="SemiBold"/>
                                 </StackPanel>
-                            </Border>
 
-                            <!-- 3. CHAMPIONNAT -->
+                                <!-- Bouton "Voir" discret, toujours visible -->
+                                <Button Grid.Column="1"
+                Content="Voir"
+                Command="{Binding ViewBlindStructureCommand}"
+                Height="35"
+                Width="60"
+                Margin="10,0,0,0"
+                VerticalAlignment="Bottom"
+                FontSize="12"
+                Padding="8,4"
+                Background="Transparent"
+                Foreground="#00ff88"
+                BorderBrush="#00ff88"
+                BorderThickness="1"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 3. CHAMPIONNAT -->
                             <Border Background="#0f3460" 
                     CornerRadius="15" 
                     Padding="20" 

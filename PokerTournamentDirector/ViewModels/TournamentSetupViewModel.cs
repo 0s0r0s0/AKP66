@@ -1,14 +1,15 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using PokerTournamentDirector.Models;
 using PokerTournamentDirector.Services;
 using PokerTournamentDirector.Views;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Diagnostics;
 
 namespace PokerTournamentDirector.ViewModels
 {
@@ -275,6 +276,15 @@ namespace PokerTournamentDirector.ViewModels
                 }
             }
             UpdateSelectionCounts();
+        }
+
+        [RelayCommand]
+        private void ViewBlindStructure()
+        {
+            var viewModel = new BlindStructureEditorViewModel(_blindService);
+
+            var blindWindow = new BlindStructureEditorView(viewModel);
+            blindWindow.ShowDialog();
         }
 
         // === MÉTHODES SÉLECTION MULTIPLE ===
