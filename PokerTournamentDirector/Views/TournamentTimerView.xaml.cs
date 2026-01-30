@@ -1391,7 +1391,7 @@ namespace PokerTournamentDirector.Views
             Height = 950;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResizeWithGrip;
-            Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0a0e27"));
+            Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1a1a2e"));
 
             var mainGrid = new Grid();
             mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -1404,19 +1404,19 @@ namespace PokerTournamentDirector.Views
                 Background = new LinearGradientBrush
                 {
                     StartPoint = new Point(0, 0),
-                    EndPoint = new Point(1, 0),
+                    EndPoint = new Point(1, 1),
                     GradientStops = new GradientStopCollection
                 {
-                    new GradientStop((Color)ColorConverter.ConvertFromString("#1e3a8a"), 0),
-                    new GradientStop((Color)ColorConverter.ConvertFromString("#3b82f6"), 1)
+                    new GradientStop((Color)ColorConverter.ConvertFromString("#0f3460"), 0),
+                    new GradientStop((Color)ColorConverter.ConvertFromString("#16213e"), 1)
                 }
                 },
-                Padding = new Thickness(30, 20, 30, 20)
+                Padding = new Thickness(30, 25, 30, 25)
             };
             header.Child = new TextBlock
             {
                 Text = "🎲 PLAN DES TABLES",
-                FontSize = 32,
+                FontSize = 36,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
                 HorizontalAlignment = HorizontalAlignment.Center
@@ -1430,7 +1430,7 @@ namespace PokerTournamentDirector.Views
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 Padding = new Thickness(30, 20, 30, 20),
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0a0e27"))
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1a1a2e"))
             };
 
             _tablesPanel = new WrapPanel
@@ -1447,9 +1447,9 @@ namespace PokerTournamentDirector.Views
             // Footer
             var footer = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1a1a2e")),
-                Padding = new Thickness(20),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2a2a3e")),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f3460")),
+                Padding = new Thickness(25),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00ff88")),
                 BorderThickness = new Thickness(0, 2, 0, 0)
             };
 
@@ -1459,7 +1459,7 @@ namespace PokerTournamentDirector.Views
                 HorizontalAlignment = HorizontalAlignment.Center
             };
 
-            var btnBalance = CreateFooterButton("⚖️ Équilibrer", "#10b981");
+            var btnBalance = CreateFooterButton("⚖️ Équilibrer", "#00ff88");
             btnBalance.Click += async (s, e) =>
             {
                 var result = await _tableService.AutoBalanceAfterChangeAsync(_tournamentId);
@@ -1475,11 +1475,11 @@ namespace PokerTournamentDirector.Views
             };
             footerStack.Children.Add(btnBalance);
 
-            var btnRefresh = CreateFooterButton("🔄 Rafraîchir", "#3b82f6");
+            var btnRefresh = CreateFooterButton("🔄 Rafraîchir", "#ffd700");
             btnRefresh.Click += (s, e) => LoadTables();
             footerStack.Children.Add(btnRefresh);
 
-            var btnClose = CreateFooterButton("✕ Fermer", "#ef4444");
+            var btnClose = CreateFooterButton("✕ Fermer", "#e94560");
             btnClose.Click += (s, e) => Close();
             footerStack.Children.Add(btnClose);
 
@@ -1492,17 +1492,21 @@ namespace PokerTournamentDirector.Views
 
         private Button CreateFooterButton(string content, string color)
         {
+            var isGreenButton = color == "#00ff88";
+
             var btn = new Button
             {
                 Content = content,
-                Width = 160,
-                Height = 50,
-                FontSize = 16,
+                Width = 170,
+                Height = 55,
+                FontSize = 17,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = isGreenButton
+                    ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1a1a2e"))
+                    : Brushes.White,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color)),
                 BorderThickness = new Thickness(0),
-                Margin = new Thickness(8, 0, 8, 0),
+                Margin = new Thickness(10, 0, 10, 0),
                 Cursor = Cursors.Hand,
                 Style = CreateButtonStyle()
             };
@@ -1522,8 +1526,8 @@ namespace PokerTournamentDirector.Views
             var factory = new FrameworkElementFactory(typeof(Border));
             factory.Name = "border";
             factory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            factory.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
-            factory.SetValue(Border.PaddingProperty, new Thickness(20, 12, 20, 12));
+            factory.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
+            factory.SetValue(Border.PaddingProperty, new Thickness(20, 0, 20, 0));
 
             var contentFactory = new FrameworkElementFactory(typeof(ContentPresenter));
             contentFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
@@ -1547,16 +1551,37 @@ namespace PokerTournamentDirector.Views
 
             if (!layouts.Any())
             {
-                var emptyText = new TextBlock
+                var emptyBorder = new Border
+                {
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#16213e")),
+                    CornerRadius = new CornerRadius(15),
+                    Padding = new Thickness(40, 50, 40, 50),
+                    Margin = new Thickness(50),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+
+                var emptyStack = new StackPanel
+                {
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                emptyStack.Children.Add(new TextBlock
+                {
+                    Text = "🎲",
+                    FontSize = 72,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 15)
+                });
+                emptyStack.Children.Add(new TextBlock
                 {
                     Text = "Aucune table créée pour le moment",
-                    FontSize = 26,
-                    Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748b")),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(50)
-                };
-                _tablesPanel.Children.Add(emptyText);
+                    FontSize = 24,
+                    Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#a0a0a0")),
+                    HorizontalAlignment = HorizontalAlignment.Center
+                });
+
+                emptyBorder.Child = emptyStack;
+                _tablesPanel.Children.Add(emptyBorder);
             }
         }
 
@@ -1564,19 +1589,19 @@ namespace PokerTournamentDirector.Views
         {
             var card = new Border
             {
-                Width = 320,
+                Width = 340,
                 Margin = new Thickness(15),
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1e293b")),
-                CornerRadius = new CornerRadius(16),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155")),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#16213e")),
+                CornerRadius = new CornerRadius(20),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00ff88")),
                 BorderThickness = new Thickness(2),
                 Effect = new DropShadowEffect
                 {
                     Color = Colors.Black,
                     Direction = 270,
-                    ShadowDepth = 10,
-                    BlurRadius = 25,
-                    Opacity = 0.6
+                    ShadowDepth = 8,
+                    BlurRadius = 20,
+                    Opacity = 0.5
                 }
             };
 
@@ -1591,31 +1616,31 @@ namespace PokerTournamentDirector.Views
                     EndPoint = new Point(1, 1),
                     GradientStops = new GradientStopCollection
                 {
-                    new GradientStop((Color)ColorConverter.ConvertFromString("#3b82f6"), 0),
-                    new GradientStop((Color)ColorConverter.ConvertFromString("#2563eb"), 1)
+                    new GradientStop((Color)ColorConverter.ConvertFromString("#0f3460"), 0),
+                    new GradientStop((Color)ColorConverter.ConvertFromString("#16213e"), 1)
                 }
                 },
-                CornerRadius = new CornerRadius(14, 14, 0, 0),
-                Padding = new Thickness(20, 15, 20, 15)
+                CornerRadius = new CornerRadius(18, 18, 0, 0),
+                Padding = new Thickness(20, 18, 20, 18)
             };
 
             var headerStack = new StackPanel();
             headerStack.Children.Add(new TextBlock
             {
                 Text = $"TABLE {table.TableNumber}",
-                FontSize = 28,
+                FontSize = 32,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00ff88")),
                 HorizontalAlignment = HorizontalAlignment.Center
             });
 
             var occupancyText = new TextBlock
             {
                 Text = $"{table.PlayerCount} / {table.MaxSeats} joueurs",
-                FontSize = 16,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#bfdbfe")),
+                FontSize = 17,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#a0a0a0")),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 5, 0, 0)
+                Margin = new Thickness(0, 6, 0, 0)
             };
             headerStack.Children.Add(occupancyText);
 
@@ -1625,7 +1650,7 @@ namespace PokerTournamentDirector.Views
             // Zone des sièges avec espacement optimisé
             var seatsStack = new StackPanel
             {
-                Margin = new Thickness(15, 20, 15, 20)
+                Margin = new Thickness(18, 20, 18, 20)
             };
 
             foreach (var seat in table.Seats)
@@ -1633,14 +1658,14 @@ namespace PokerTournamentDirector.Views
                 var seatBorder = new Border
                 {
                     Background = seat.IsOccupied
-                        ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f172a"))
-                        : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#334155")),
-                    CornerRadius = new CornerRadius(10),
+                        ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f3460"))
+                        : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1a1a2e")),
+                    CornerRadius = new CornerRadius(12),
                     Padding = new Thickness(16, 12, 16, 12),
-                    Margin = new Thickness(0, 0, 0, 8),
+                    Margin = new Thickness(0, 0, 0, 10),
                     BorderBrush = seat.IsOccupied
-                        ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3b82f6"))
-                        : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#475569")),
+                        ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00ff88"))
+                        : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f3460")),
                     BorderThickness = new Thickness(2)
                 };
 
@@ -1648,20 +1673,33 @@ namespace PokerTournamentDirector.Views
                 seatGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 seatGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                // Numéro de siège
-                var seatNumber = new TextBlock
+                // Numéro de siège avec cercle
+                var seatNumberBorder = new Border
                 {
-                    Text = $"{seat.SeatNumber}",
-                    FontSize = 20,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = seat.IsOccupied
-                        ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#60a5fa"))
-                        : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#94a3b8")),
-                    Width = 40,
+                    Width = 38,
+                    Height = 38,
+                    Background = seat.IsOccupied
+                        ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00ff88"))
+                        : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0f3460")),
+                    CornerRadius = new CornerRadius(19),
+                    Margin = new Thickness(0, 0, 12, 0),
                     VerticalAlignment = VerticalAlignment.Center
                 };
-                Grid.SetColumn(seatNumber, 0);
-                seatGrid.Children.Add(seatNumber);
+
+                seatNumberBorder.Child = new TextBlock
+                {
+                    Text = $"{seat.SeatNumber}",
+                    FontSize = 18,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = seat.IsOccupied
+                        ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1a1a2e"))
+                        : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#a0a0a0")),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+
+                Grid.SetColumn(seatNumberBorder, 0);
+                seatGrid.Children.Add(seatNumberBorder);
 
                 // Nom du joueur
                 var playerStack = new StackPanel
@@ -1675,10 +1713,11 @@ namespace PokerTournamentDirector.Views
                     playerStack.Children.Add(new TextBlock
                     {
                         Text = seat.PlayerName,
-                        FontSize = 18,
+                        FontSize = 17,
                         FontWeight = FontWeights.SemiBold,
                         Foreground = Brushes.White,
-                        TextTrimming = TextTrimming.CharacterEllipsis
+                        TextTrimming = TextTrimming.CharacterEllipsis,
+                        VerticalAlignment = VerticalAlignment.Center
                     });
 
                     if (seat.IsLocked)
@@ -1686,7 +1725,7 @@ namespace PokerTournamentDirector.Views
                         playerStack.Children.Add(new TextBlock
                         {
                             Text = " 🔒",
-                            FontSize = 16,
+                            FontSize = 15,
                             VerticalAlignment = VerticalAlignment.Center,
                             Margin = new Thickness(8, 0, 0, 0)
                         });
@@ -1697,9 +1736,10 @@ namespace PokerTournamentDirector.Views
                     playerStack.Children.Add(new TextBlock
                     {
                         Text = "Libre",
-                        FontSize = 18,
-                        Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#94a3b8")),
-                        FontStyle = FontStyles.Italic
+                        FontSize = 17,
+                        Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#a0a0a0")),
+                        FontStyle = FontStyles.Italic,
+                        VerticalAlignment = VerticalAlignment.Center
                     });
                 }
 
