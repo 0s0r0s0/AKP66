@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using PokerTournamentDirector;
@@ -8,11 +9,14 @@ using PokerTournamentDirector.ViewModels;
 using PokerTournamentDirector.Views;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -69,6 +73,11 @@ namespace PokerTournamentDirector.Views
         {
             switch (e.Key)
             {
+                case Key.R:
+                    ShortcutsPopup.IsOpen = !ShortcutsPopup.IsOpen;
+                    e.Handled = true;
+                    break;
+
                 case Key.Escape:
                     Close();
                     break;
@@ -119,6 +128,11 @@ namespace PokerTournamentDirector.Views
                         : WindowState.Maximized;
                     break;
             }
+        }
+
+        private void ShortcutsButton_Click(object sender, RoutedEventArgs e)
+        {
+            ShortcutsPopup.IsOpen = !ShortcutsPopup.IsOpen;
         }
 
         private void Window_Closing(object sender, CancelEventArgs e)
@@ -903,7 +917,7 @@ namespace PokerTournamentDirector.Views
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 20, 0, 0)
+                Margin = new Thickness(0, 25, 0, 0)
             };
 
             var btnAdd = new Button
@@ -952,9 +966,9 @@ namespace PokerTournamentDirector.Views
 
             _playerList.Items.Clear();
             foreach (var player in availablePlayers.OrderBy(p => p.Name))
-            {
+        {
                 _playerList.Items.Add(new ListBoxItem
-                {
+            {
                     Content = $"{player.Name}" + (string.IsNullOrEmpty(player.Nickname) ? "" : $" (@{player.Nickname})"),
                     Tag = player.Id,
                     Padding = new Thickness(10, 8, 10, 8),
@@ -970,21 +984,21 @@ namespace PokerTournamentDirector.Views
                     IsEnabled = false,
                     Foreground = System.Windows.Media.Brushes.Gray
                 });
-            }
-        }
+                }
+                }
 
         private void BtnAdd_Click(object sender, RoutedEventArgs e)
-        {
+                {
             if (_playerList.SelectedItem is ListBoxItem selectedItem && selectedItem.Tag is int playerId)
-            {
+                {
                 SelectedPlayerId = playerId;
                 DialogResult = true;
                 Close();
             }
             else
-            {
+        {
                 CustomMessageBox.ShowInformation("Veuillez sélectionner un joueur.", "Info");
-            }
+        }
         }
     }
     #endregion

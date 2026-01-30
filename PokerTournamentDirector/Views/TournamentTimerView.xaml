@@ -140,13 +140,89 @@
                     <TextBlock Text="{Binding TournamentDuration}" FontSize="28" FontWeight="Bold" Foreground="#ffd700" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Raccourcis clavier -->
-                <TextBlock Grid.Column="2"
-                           Text="[S] Start/Pause | [K] Élim./Recave | [P] Joueurs | [B] Blinds | [M] Modifier Blinds [→] Niveau suivant | [←] Précédent | [ESC] Quitter" 
-                           FontSize="14" 
-                           Foreground="#a0a0a0"
-                           HorizontalAlignment="Right" 
-                           VerticalAlignment="Center"/>
+                <!-- Raccourcis clavier : bouton + Popup -->
+                <StackPanel Grid.Column="2" 
+            Orientation="Horizontal" 
+            HorizontalAlignment="Right" 
+            VerticalAlignment="Center">
+
+                    <!-- Bouton discret -->
+                    <Button Content="Raccourcis clavier [R]"
+            FontSize="13"
+            Foreground="#a0a0a0"
+            Background="Transparent"
+            BorderThickness="0"
+            Padding="8,4"
+            Cursor="Hand"
+            Click="ShortcutsButton_Click"/>
+
+                    <!-- Popup des raccourcis (sort du header, pas clipé) -->
+                    <Popup x:Name="ShortcutsPopup"
+           IsOpen="False"
+           Placement="Bottom"
+           PlacementTarget="{Binding RelativeSource={RelativeSource AncestorType=Button}}"
+           AllowsTransparency="True"
+           StaysOpen="False">
+                        <Border Background="#1a1a2e"
+                BorderBrush="#00ff88"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                MinWidth="420">
+                            <StackPanel>
+                                <TextBlock Text="Raccourcis clavier"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[R]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Afficher / Masquer raccourcis" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[S]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Start / Pause / Reprendre" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[T]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Afficher tables" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[K]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Élimination / Recave" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[P]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Inscrire joueurs" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[B]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Afficher Blinds" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[M]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Modifier Blinds" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[→]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Blinds | Niveau suivant" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[←]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Blinds | Niveau précédent" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[F11]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Plein écran" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="[ESC]" FontWeight="Bold" Foreground="#00ff88" Width="60" FontSize="14"/>
+                                    <TextBlock Text="Quitter" Foreground="White" FontSize="14"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </StackPanel>
             </Grid>
         </Border>
 
