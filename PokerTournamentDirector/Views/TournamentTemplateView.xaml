@@ -1,29 +1,36 @@
 ﻿<Window x:Class="PokerTournamentDirector.Views.TournamentTemplateView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:PokerTournamentDirector.Models"
-        Title="📝 Modèles de Tournois"
-        Height="850" Width="1500"
+        xmlns:converters="clr-namespace:PokerTournamentDirector.Converters"
+        xmlns:models="clr-namespace:PokerTournamentDirector.Models"
+        Title="Modèles de Tournois" 
+        Height="850" Width="1400"
         Background="#1a1a2e"
-        WindowStartupLocation="CenterScreen"
-        WindowState="Maximized">
+        WindowStartupLocation="CenterScreen">
+
     <Window.Resources>
+        <converters:NullToBoolConverter x:Key="NullToBoolConverter"/>
+        <converters:NullToCollapsedConverter x:Key="NullToCollapsedConverter"/>
+        <converters:BoolToVisibleConverter x:Key="BoolToVisibleConverter"/>
+
+        <!-- STYLES MINIMAUX -->
         <Style x:Key="CardStyle" TargetType="Border">
             <Setter Property="Background" Value="#16213e"/>
             <Setter Property="CornerRadius" Value="15"/>
             <Setter Property="Padding" Value="20"/>
             <Setter Property="Margin" Value="10"/>
         </Style>
+
         <Style x:Key="TitleStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="24"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="Foreground" Value="#00ff88"/>
         </Style>
+
         <Style x:Key="LabelStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14"/>
             <Setter Property="Foreground" Value="#a0a0a0"/>
-            <Setter Property="Margin" Value="0,6,0,4"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Margin" Value="0,10,0,5"/>
         </Style>
         <Style x:Key="TextBoxStyle" TargetType="TextBox">
             <Setter Property="Background" Value="#0f3460" />
@@ -185,16 +192,15 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        
     </Window.Resources>
 
     <Grid Margin="15">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="320"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Colonne gauche : Liste des modèles -->
+        <!-- Liste templates avec étoile favori -->
         <Border Grid.Column="0" Style="{StaticResource CardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
@@ -203,10 +209,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" 
-                           Text="📋 Modèles" 
-                           Style="{StaticResource TitleStyle}" 
-                           FontSize="20"/>
+                <TextBlock Text="📋 Modèles" Style="{StaticResource TitleStyle}" FontSize="20"/>
 
                 <ListBox Grid.Row="1"
                          ItemsSource="{Binding Templates}"
@@ -214,43 +217,56 @@
                          Background="#0f3460"
                          BorderThickness="0"
                          Foreground="White"
-                         FontSize="13">
+                         Margin="0,10,0,0">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="5">
-                                <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-                                <TextBlock FontSize="11" Foreground="#a0a0a0">
-                                    <Run Text="{Binding BuyIn, StringFormat='{}{0:C}'}"/>
-                                    <Run Text=" • "/>
-                                    <Run Text="{Binding StartingStack, StringFormat='{}{0:N0} jetons'}"/>
-                                </TextBlock>
-                            </StackPanel>
+                            <Grid Margin="5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- ÉTOILE FAVORI -->
+                                <Button Grid.Column="0"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Width="30" Height="30"
+                                        Margin="0,0,8,0"
+                                        Click="FavoriteButton_Click"
+                                        Tag="{Binding}">
+                                    <TextBlock FontSize="18">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="☆"/>
+                                                <Setter Property="Foreground" Value="#666"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                        <Setter Property="Text" Value="⭐"/>
+                                                        <Setter Property="Foreground" Value="#ffb703"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Button>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                    <TextBlock FontSize="11" Foreground="#a0a0a0">
+                                        <Run Text="{Binding BuyIn, StringFormat='{}{0:C}'}"/>
+                                        <Run Text=" • "/>
+                                        <Run Text="{Binding StartingStack, StringFormat='{}{0:N0} jetons'}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
 
                 <StackPanel Grid.Row="2" Margin="0,12,0,0">
-                    <Button Content="➕ Nouveau"
-                            Command="{Binding NewTemplateCommand}"
-                            Height="38"
-                            Background="#00ff88"
-                            Foreground="#1a1a2e"
-                            FontWeight="Bold"
-                            Margin="0,4"/>
-                    <Button Content="📋 Dupliquer"
-                            Command="{Binding DuplicateTemplateCommand}"
-                            Height="34"
-                            Background="#0f3460"
-                            Foreground="White"
-                            Margin="0,4"
-                            IsEnabled="{Binding SelectedTemplate, Converter={StaticResource NullToBoolConverter}}"/>
-                    <Button Content="🗑️ Supprimer"
-                            Command="{Binding DeleteTemplateCommand}"
-                            Height="34"
-                            Background="#e94560"
-                            Foreground="White"
-                            Margin="0,4"
-                            IsEnabled="{Binding SelectedTemplate, Converter={StaticResource NullToBoolConverter}}"/>
+                    <Button Content="➕ Nouveau" Command="{Binding NewTemplateCommand}" Height="38" Background="#00ff88" Foreground="#1a1a2e" FontWeight="Bold" Margin="0,4"/>
+                    <Button Content="📋 Dupliquer" Command="{Binding DuplicateTemplateCommand}" Height="34" Background="#0f3460" Foreground="White" Margin="0,4" IsEnabled="{Binding SelectedTemplate, Converter={StaticResource NullToBoolConverter}}"/>
+                    <Button Content="🗑️ Supprimer" Command="{Binding DeleteTemplateCommand}" Height="34" Background="#e94560" Foreground="White" Margin="0,4" IsEnabled="{Binding SelectedTemplate, Converter={StaticResource NullToBoolConverter}}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -294,9 +310,9 @@
                                     <ComboBox SelectedItem="{Binding EditType, UpdateSourceTrigger=PropertyChanged}"
                                               Style="{StaticResource ComboBoxStyle}">
                                         <ComboBox.Items>
-                                            <x:Static Member="local:TournamentTemplateType.Cash"/>
-                                            <x:Static Member="local:TournamentTemplateType.Freeroll"/>
-                                            <x:Static Member="local:TournamentTemplateType.Points"/>
+                                            <x:Static Member="models:TournamentTemplateType.Cash"/>
+                                            <x:Static Member="models:TournamentTemplateType.Freeroll"/>
+                                            <x:Static Member="models:TournamentTemplateType.Points"/>
                                         </ComboBox.Items>
                                     </ComboBox>
                                 </StackPanel>
@@ -323,6 +339,9 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
+
+                                                   
+     
                                         <StackPanel Grid.Column="0" Margin="0,0,8,0">
                                             <TextBlock Text="Buy-in" Style="{StaticResource LabelStyle}"/>
                                             <TextBox Text="{Binding EditBuyIn, UpdateSourceTrigger=PropertyChanged}"

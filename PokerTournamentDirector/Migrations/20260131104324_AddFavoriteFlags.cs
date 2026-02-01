@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PokerTournamentDirector.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreateWithPokerTables : Migration
+    public partial class AddFavoriteFlags : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -30,6 +30,12 @@ namespace PokerTournamentDirector.Migrations
                     SoundOn10Seconds = table.Column<bool>(type: "INTEGER", nullable: false),
                     SoundOnCountdown = table.Column<bool>(type: "INTEGER", nullable: false),
                     SoundOnLevelChange = table.Column<bool>(type: "INTEGER", nullable: false),
+                    SoundOnKill = table.Column<bool>(type: "INTEGER", nullable: false),
+                    SoundOnRebuy = table.Column<bool>(type: "INTEGER", nullable: false),
+                    SoundOnUndoKill = table.Column<bool>(type: "INTEGER", nullable: false),
+                    SoundOnWin = table.Column<bool>(type: "INTEGER", nullable: false),
+                    SoundOnBreak = table.Column<bool>(type: "INTEGER", nullable: false),
+                    SoundOnStart = table.Column<bool>(type: "INTEGER", nullable: false),
                     DefaultLevelDuration = table.Column<int>(type: "INTEGER", nullable: false),
                     DefaultBreakDuration = table.Column<int>(type: "INTEGER", nullable: false),
                     FiscalYearStartMonth = table.Column<int>(type: "INTEGER", nullable: false),
@@ -54,6 +60,7 @@ namespace PokerTournamentDirector.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
+                    IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false),
                     Name = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "TEXT", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "TEXT", nullable: false)
@@ -193,10 +200,11 @@ namespace PokerTournamentDirector.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 150, nullable: false),
                     Description = table.Column<string>(type: "TEXT", nullable: true),
+                    IsFavorite = table.Column<bool>(type: "INTEGER", nullable: false),
                     Type = table.Column<int>(type: "INTEGER", nullable: false),
                     Currency = table.Column<string>(type: "TEXT", nullable: false),
-                    BuyIn = table.Column<decimal>(type: "TEXT", nullable: false),
-                    Rake = table.Column<decimal>(type: "TEXT", nullable: false),
+                    BuyIn = table.Column<int>(type: "INTEGER", nullable: false),
+                    Rake = table.Column<int>(type: "INTEGER", nullable: false),
                     RakeType = table.Column<int>(type: "INTEGER", nullable: false),
                     BlindStructureId = table.Column<int>(type: "INTEGER", nullable: false),
                     StartingStack = table.Column<int>(type: "INTEGER", nullable: false),
@@ -574,11 +582,11 @@ namespace PokerTournamentDirector.Migrations
 
             migrationBuilder.InsertData(
                 table: "BlindStructures",
-                columns: new[] { "Id", "CreatedDate", "Description", "Name" },
+                columns: new[] { "Id", "CreatedDate", "Description", "IsFavorite", "Name" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2026, 1, 25, 16, 58, 46, 663, DateTimeKind.Local).AddTicks(4314), "Structure classique pour home games", "Standard (2h)" },
-                    { 2, new DateTime(2026, 1, 25, 16, 58, 46, 663, DateTimeKind.Local).AddTicks(4478), "Structure rapide, niveaux de 12 minutes", "Turbo (1h30)" }
+                    { 1, new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8099), "Structure classique pour home games", false, "Standard (2h)" },
+                    { 2, new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8245), "Structure rapide, niveaux de 12 minutes", false, "Turbo (1h30)" }
                 });
 
             migrationBuilder.InsertData(

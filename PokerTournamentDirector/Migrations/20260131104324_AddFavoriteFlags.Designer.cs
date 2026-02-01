@@ -11,8 +11,8 @@ using PokerTournamentDirector.Data;
 namespace PokerTournamentDirector.Migrations
 {
     [DbContext(typeof(PokerDbContext))]
-    [Migration("20260125155847_InitialCreateWithPokerTables")]
-    partial class InitialCreateWithPokerTables
+    [Migration("20260131104324_AddFavoriteFlags")]
+    partial class AddFavoriteFlags
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -86,13 +86,31 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<bool>("SoundOn60Seconds")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("SoundOnBreak")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("SoundOnCountdown")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SoundOnKill")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("SoundOnLevelChange")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("SoundOnPauseResume")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SoundOnRebuy")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SoundOnStart")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SoundOnUndoKill")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SoundOnWin")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("TrialPeriodWeeks")
@@ -359,6 +377,9 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -372,15 +393,17 @@ namespace PokerTournamentDirector.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedDate = new DateTime(2026, 1, 25, 16, 58, 46, 663, DateTimeKind.Local).AddTicks(4314),
+                            CreatedDate = new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8099),
                             Description = "Structure classique pour home games",
+                            IsFavorite = false,
                             Name = "Standard (2h)"
                         },
                         new
                         {
                             Id = 2,
-                            CreatedDate = new DateTime(2026, 1, 25, 16, 58, 46, 663, DateTimeKind.Local).AddTicks(4478),
+                            CreatedDate = new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8245),
                             Description = "Structure rapide, niveaux de 12 minutes",
+                            IsFavorite = false,
                             Name = "Turbo (1h30)"
                         });
                 });
@@ -1194,8 +1217,8 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<int>("BountyType")
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("BuyIn")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("BuyIn")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("TEXT");
@@ -1206,6 +1229,9 @@ namespace PokerTournamentDirector.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("LastModified")
                         .HasColumnType("TEXT");
@@ -1227,8 +1253,8 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<string>("PayoutStructureJson")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("Rake")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Rake")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("RakeType")
                         .HasColumnType("INTEGER");

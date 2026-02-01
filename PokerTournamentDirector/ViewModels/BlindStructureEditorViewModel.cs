@@ -135,6 +135,8 @@ namespace PokerTournamentDirector.ViewModels
 
         #region Création et modification manuelle
 
+
+
         [RelayCommand]
         private void NewStructure()
         {
@@ -301,6 +303,38 @@ namespace PokerTournamentDirector.ViewModels
             await LoadStructuresAsync();
 
             CustomMessageBox.ShowSuccess($"Structure dupliquée : {newName}", "Succès");
+        }
+
+        [RelayCommand]
+        private async Task ToggleFavorite(BlindStructure structure)
+        {
+            try
+            {
+                // Si on met en favori, retirer le favori des autres
+                if (!structure.IsFavorite)
+                {
+                    var allStructures = await _blindService.GetAllStructuresAsync();
+                    foreach (var s in allStructures.Where(s => s.IsFavorite && s.Id != structure.Id))
+                    {
+                        s.IsFavorite = false;
+                        await _blindService.UpdateStructureAsync(s);
+                    }
+                }
+
+                structure.IsFavorite = !structure.IsFavorite;
+                await _blindService.UpdateStructureAsync(structure);
+                await LoadStructuresAsync();
+
+                CustomMessageBox.ShowSuccess(
+                    structure.IsFavorite
+                        ? $"⭐ '{structure.Name}' défini comme favori !"
+                        : $"'{structure.Name}' retiré des favoris.",
+                    "Favori");
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur : {ex.Message}");
+            }
         }
 
         #endregion

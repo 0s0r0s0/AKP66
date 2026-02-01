@@ -172,6 +172,35 @@ namespace PokerTournamentDirector.ViewModels
             }
         }
 
+        [RelayCommand]
+        private async Task ToggleFavorite(TournamentTemplate template)
+        {
+            try
+            {
+                if (!template.IsFavorite)
+                {
+                    var allTemplates = await _templateService.GetAllTemplatesAsync();
+                    foreach (var t in allTemplates.Where(t => t.IsFavorite && t.Id != template.Id))
+                    {
+                        t.IsFavorite = false;
+                        await _templateService.UpdateTemplateAsync(t);
+                    }
+                }
+
+                template.IsFavorite = !template.IsFavorite;
+                await _templateService.UpdateTemplateAsync(template);
+                await LoadTemplatesAsync();
+
+                Views.CustomMessageBox.ShowSuccess(
+                    template.IsFavorite ? $"⭐ '{template.Name}' favori !" : $"'{template.Name}' retiré.",
+                    "Favori");
+            }
+            catch (Exception ex)
+            {
+                Views.CustomMessageBox.ShowError($"Erreur : {ex.Message}");
+            }
+        }
+
         #endregion
 
         #region Commandes CRUD (Création, Sauvegarde, Suppression, Duplication)

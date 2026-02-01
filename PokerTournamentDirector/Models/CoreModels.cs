@@ -135,6 +135,7 @@ namespace PokerTournamentDirector.Models
     {
         [Key]
         public int Id { get; set; }
+        public bool IsFavorite { get; set; } = false;
 
         [Required]
         [MaxLength(100)]

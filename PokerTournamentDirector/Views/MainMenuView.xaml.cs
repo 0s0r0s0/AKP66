@@ -1,5 +1,8 @@
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using PokerTournamentDirector.Data;
+using PokerTournamentDirector.Models;
 using PokerTournamentDirector.Services;
 using PokerTournamentDirector.ViewModels;
 using System.Linq;
@@ -16,6 +19,7 @@ namespace PokerTournamentDirector.Views
         {
             InitializeComponent();
             _serviceProvider = serviceProvider;
+            Loaded += async (s, e) => await LoadCurrentSeasonInfoAsync();
         }
 
         private async void NewTournament_Click(object sender, RoutedEventArgs e)
@@ -53,7 +57,7 @@ namespace PokerTournamentDirector.Views
             // Ouvrir l'écran de configuration du tournoi
             var tournamentService = _serviceProvider.GetRequiredService<TournamentService>();
             var templateService = _serviceProvider.GetRequiredService<TournamentTemplateService>();
-            var tableManagementService = _serviceProvider.GetRequiredService<TableManagementService>(); 
+            var tableManagementService = _serviceProvider.GetRequiredService<TableManagementService>();
             var championshipService = _serviceProvider.GetRequiredService<ChampionshipService>();
 
             var viewModel = new TournamentSetupViewModel(
@@ -62,7 +66,7 @@ namespace PokerTournamentDirector.Views
                 playerService,
                 blindService,
                 tableManagementService,
-                championshipService); 
+                championshipService);
 
             var setupWindow = new TournamentSetupView(viewModel, _serviceProvider);
 
@@ -94,8 +98,8 @@ namespace PokerTournamentDirector.Views
             }
 
 
-                await LaunchTournamentTimerAsync(activeTournaments.First().Id);
-                return;
+            await LaunchTournamentTimerAsync(activeTournaments.First().Id);
+            return;
 
         }
 
@@ -110,7 +114,7 @@ namespace PokerTournamentDirector.Views
 
         private void ManagePlayers_Click(object sender, RoutedEventArgs e)
         {
-            var settingsService = _serviceProvider.GetRequiredService<SettingsService>(); 
+            var settingsService = _serviceProvider.GetRequiredService<SettingsService>();
             var playerService = _serviceProvider.GetRequiredService<PlayerService>();
             var viewModel = new PlayerManagementViewModel(playerService, settingsService);
 
@@ -168,119 +172,121 @@ namespace PokerTournamentDirector.Views
                 Application.Current.Shutdown();
             }
         }
+        // RACCOURCIS
+        private async Task LoadCurrentSeasonInfoAsync()
+        {
+            try
+            {
+                var context = _serviceProvider.GetRequiredService<PokerDbContext>();
+                var now = DateTime.Now;
 
+                var currentChampionship = await context.Championships
+                    .Where(c => c.Status == ChampionshipStatus.Active &&
+                               c.StartDate <= now &&
+                               c.EndDate >= now)
+                    .OrderByDescending(c => c.StartDate)
+                    .FirstOrDefaultAsync();
 
+                if (currentChampionship != null)
+                {
+                    txtCurrentSeasonName.Text = $"{currentChampionship.Name}\n{currentChampionship.Season}";
+                }
+                else
+                {
+                    txtCurrentSeasonName.Text = "Aucune saison active";
+                }
+            }
+            catch
+            {
+                txtCurrentSeasonName.Text = "Aucune saison active";
+            }
+        }
+
+        // AJOUTE cette méthode
+        private async void QuickAccessChampionship_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var context = _serviceProvider.GetRequiredService<PokerDbContext>();
+                var now = DateTime.Now;
+
+                var currentChampionship = await context.Championships
+                    .Where(c => c.Status == ChampionshipStatus.Active &&
+                               c.StartDate <= now &&
+                               c.EndDate >= now)
+                    .OrderByDescending(c => c.StartDate)
+                    .FirstOrDefaultAsync();
+
+                if (currentChampionship == null)
+                {
+                    var result = CustomMessageBox.ShowConfirmation(
+                        "Aucune saison active trouvée.\nVoulez-vous créer un nouveau championnat ?",
+                        "Aucune saison"
+                    );
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        Championship_Click(sender, e);
+                    }
+                    return;
+                }
+
+                var championshipService = _serviceProvider.GetRequiredService<ChampionshipService>();
+                var dbContext = _serviceProvider.GetRequiredService<PokerDbContext>();
+
+                var dashboardView = new ChampionshipDashboardView(
+                    currentChampionship.Id,
+                    championshipService,
+                    dbContext);
+
+                dashboardView.Show();
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur : {ex.Message}");
+            }
+        }
+
+        // AJOUTE cette méthode
+        private async void QuickAccessTournament_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var tournamentService = _serviceProvider.GetRequiredService<TournamentService>();
+                var templateService = _serviceProvider.GetRequiredService<TournamentTemplateService>();
+                var blindService = _serviceProvider.GetRequiredService<BlindStructureService>();
+                var championshipService = _serviceProvider.GetRequiredService<ChampionshipService>();
+                var playerService = _serviceProvider.GetRequiredService<PlayerService>();
+                var context = _serviceProvider.GetRequiredService<PokerDbContext>();
+
+                var viewModel = new QuickTournamentLaunchViewModel(
+                    tournamentService,
+                    templateService,
+                    blindService,
+                    championshipService,
+                    playerService,
+                    context);
+
+                var window = new QuickTournamentLaunchView(viewModel);
+
+                if (window.ShowDialog() == true)
+                {
+                    var timerViewModel = _serviceProvider.GetRequiredService<TournamentTimerViewModel>();
+                    await timerViewModel.LoadTournamentAsync(window.CreatedTournamentId);
+
+                    var timerWindow = new TournamentTimerView(timerViewModel, _serviceProvider);
+                    timerWindow.Show();
+                }
+            }
+            catch (Exception ex)
+            {
+                CustomMessageBox.ShowError($"Erreur : {ex.Message}", "Erreur");
+            }
+        }
     }
-    
-    /// ZDIS
-    /// <summary>
-    /// Dialogue simple pour sélectionner un tournoi à reprendre
-    /// </summary>
-    //public class TournamentSelectDialog : Window
-    //{
-    //    public int? SelectedTournamentId { get; private set; }
-    //    private System.Windows.Controls.ListBox _listBox;
 
-    //    public TournamentSelectDialog(System.Collections.Generic.List<Models.Tournament> tournaments)
-    //    {
-    //        Title = "Sélectionner un tournoi";
-    //        Width = 500;
-    //        Height = 400;
-    //        WindowStartupLocation = WindowStartupLocation.CenterOwner;
-    //        Background = new System.Windows.Media.SolidColorBrush(
-    //            (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1a1a2e"));
 
-    //        var mainPanel = new System.Windows.Controls.StackPanel { Margin = new Thickness(20) };
 
-    //        mainPanel.Children.Add(new System.Windows.Controls.TextBlock
-    //        {
-    //            Text = "Choisissez un tournoi à reprendre",
-    //            FontSize = 20,
-    //            FontWeight = FontWeights.Bold,
-    //            Foreground = System.Windows.Media.Brushes.White,
-    //            Margin = new Thickness(0, 0, 0, 20)
-    //        });
 
-    //        _listBox = new System.Windows.Controls.ListBox
-    //        {
-    //            Height = 250,
-    //            Background = new System.Windows.Media.SolidColorBrush(
-    //                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#0f3460")),
-    //            Foreground = System.Windows.Media.Brushes.White,
-    //            BorderThickness = new Thickness(0)
-    //        };
 
-    //        foreach (var tournament in tournaments)
-    //        {
-    //            var statusText = tournament.Status switch
-    //            {
-    //                Models.TournamentStatus.Running => "▶️ En cours",
-    //                Models.TournamentStatus.Paused => "⏸️ En pause",
-    //                Models.TournamentStatus.Registration => "📝 Inscriptions",
-    //                _ => tournament.Status.ToString()
-    //            };
-
-    //            _listBox.Items.Add(new System.Windows.Controls.ListBoxItem
-    //            {
-    //                Content = $"{tournament.Name} - {tournament.Date:dd/MM/yyyy} ({statusText})",
-    //                Tag = tournament.Id,
-    //                Padding = new Thickness(10, 8, 10, 8),
-    //                Foreground = System.Windows.Media.Brushes.White
-    //            });
-    //        }
-
-    //        mainPanel.Children.Add(_listBox);
-
-    //        var buttonPanel = new System.Windows.Controls.StackPanel
-    //        {
-    //            Orientation = System.Windows.Controls.Orientation.Horizontal,
-    //            HorizontalAlignment = HorizontalAlignment.Center,
-    //            Margin = new Thickness(0, 20, 0, 0)
-    //        };
-
-    //        var btnSelect = new System.Windows.Controls.Button
-    //        {
-    //            Content = "Reprendre",
-    //            Width = 120,
-    //            Height = 40,
-    //            Background = new System.Windows.Media.SolidColorBrush(
-    //                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#00ff88")),
-    //            Foreground = new System.Windows.Media.SolidColorBrush(
-    //                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1a1a2e")),
-    //            FontWeight = FontWeights.Bold,
-    //            Margin = new Thickness(5, 0, 5, 0)
-    //        };
-    //        btnSelect.Click += (s, e) =>
-    //        {
-    //            if (_listBox.SelectedItem is System.Windows.Controls.ListBoxItem item && item.Tag is int id)
-    //            {
-    //                SelectedTournamentId = id;
-    //                DialogResult = true;
-    //                Close();
-    //            }
-    //            else
-    //            {
-    //                CustomMessageBox.ShowInformation("Veuillez sélectionner un tournoi.", "Info");
-    //            }
-    //        };
-    //        buttonPanel.Children.Add(btnSelect);
-
-    //        var btnCancel = new System.Windows.Controls.Button
-    //        {
-    //            Content = "Annuler",
-    //            Width = 120,
-    //            Height = 40,
-    //            Background = new System.Windows.Media.SolidColorBrush(
-    //                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#e94560")),
-    //            Foreground = System.Windows.Media.Brushes.White,
-    //            FontWeight = FontWeights.Bold,
-    //            Margin = new Thickness(5, 0, 5, 0)
-    //        };
-    //        btnCancel.Click += (s, e) => { DialogResult = false; Close(); };
-    //        buttonPanel.Children.Add(btnCancel);
-
-    //        mainPanel.Children.Add(buttonPanel);
-    //        Content = mainPanel;
-    //    }
-    //}
 }

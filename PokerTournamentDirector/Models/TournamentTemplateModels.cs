@@ -16,6 +16,7 @@ namespace PokerTournamentDirector.Models
         public string Name { get; set; } = string.Empty;
 
         public string? Description { get; set; }
+        public bool IsFavorite { get; set; } = false;
 
         // Type & Finance
         public TournamentTemplateType Type { get; set; } = TournamentTemplateType.Cash;

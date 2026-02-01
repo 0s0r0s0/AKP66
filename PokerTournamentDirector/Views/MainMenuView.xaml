@@ -69,30 +69,37 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- HEADER -->
+        <!--  HEADER  -->
         <Border Grid.Row="0" Background="#0f3460" Padding="30">
-            <StackPanel>
-                <TextBlock Text="♠️ AK 66 Poker Manager ♥️" 
-           FontSize="42" 
-           FontWeight="Bold" 
-           Foreground="#00ff88"
-           HorizontalAlignment="Center">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="15"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Titre principal avec effet néon -->
+                <TextBlock Grid.Row="0"
+                   Text="♠️ AK 66 Poker Manager ♥️" 
+                   FontSize="42" 
+                   FontWeight="Bold" 
+                   Foreground="#00ff88"
+                   HorizontalAlignment="Center">
                     <TextBlock.Effect>
                         <DropShadowEffect x:Name="NeonEffect"
-                          Color="#00ff88" 
-                          BlurRadius="25" 
-                          ShadowDepth="0"
-                          Opacity="1.0"/>
+                                  Color="#00ff88" 
+                                  BlurRadius="25" 
+                                  ShadowDepth="0"
+                                  Opacity="1.0"/>
                     </TextBlock.Effect>
                     <TextBlock.Triggers>
                         <EventTrigger RoutedEvent="Loaded">
                             <BeginStoryboard>
-                                <Storyboard>
+                                <Storyboard RepeatBehavior="Forever">
                                     <!-- Effet de néon réaliste avec variations aléatoires -->
                                     <DoubleAnimationUsingKeyFrames
-                        Storyboard.TargetName="NeonEffect"
-                        Storyboard.TargetProperty="Opacity">
-                                        <!-- Séquence sur 4 secondes -->
+                                Storyboard.TargetName="NeonEffect"
+                                Storyboard.TargetProperty="Opacity">
                                         <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:0.0"/>
                                         <LinearDoubleKeyFrame Value="0.9" KeyTime="0:0:0.5"/>
                                         <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:0.8"/>
@@ -103,38 +110,31 @@
                                         <LinearDoubleKeyFrame Value="0.6" KeyTime="0:0:2.8"/>
                                         <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:3.0"/>
                                         <LinearDoubleKeyFrame Value="1.0" KeyTime="0:0:4.0"/>
-                                        <!-- Clignotement rapide à la fin -->
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:4.1"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:4.2"/>
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:4.3"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:4.4"/>
-                                        <!-- Clignotement rapide à la fin -->
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:7.1"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:7.2"/>
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:7.3"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:7.4"/>
-                                        <!-- Clignotement rapide à la fin -->
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:10.1"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:10.2"/>
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:10.3"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:10.4"/>
-                                        <!-- Clignotement rapide à la fin -->
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:12.1"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:12.2"/>
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:12.3"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:12.4"/>
-                                        <!-- Clignotement rapide à la fin -->
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:15.1"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:15.2"/>
                                         <DiscreteDoubleKeyFrame Value="0.3" KeyTime="0:0:15.3"/>
                                         <DiscreteDoubleKeyFrame Value="1.0" KeyTime="0:0:15.4"/>
-
                                     </DoubleAnimationUsingKeyFrames>
 
-                                    <!-- Animation du flou pour effet de scintillement -->
                                     <DoubleAnimationUsingKeyFrames
-                        Storyboard.TargetName="NeonEffect"
-                        Storyboard.TargetProperty="BlurRadius">
+                                Storyboard.TargetName="NeonEffect"
+                                Storyboard.TargetProperty="BlurRadius">
                                         <LinearDoubleKeyFrame Value="25" KeyTime="0:0:0.0"/>
                                         <LinearDoubleKeyFrame Value="30" KeyTime="0:0:1.0"/>
                                         <LinearDoubleKeyFrame Value="25" KeyTime="0:0:2.0"/>
@@ -147,12 +147,25 @@
                     </TextBlock.Triggers>
                 </TextBlock>
 
-                <TextBlock Text="Los Reneg'As ¡Hasta la victoria siempre!" 
-                          FontSize="18" 
-                          Foreground="#a0a0a0"
-                          HorizontalAlignment="Center"
-                          Margin="0,10,0,0"/>
-            </StackPanel>
+                <!-- Sous-titre  -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Sous-titre centré -->
+                    <TextBlock Grid.Column="1"
+                       Text="Los Reneg'As ¡Hasta la victoria siempre!" 
+                       FontSize="18" 
+                       Foreground="#a0a0a0"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+
+                   
+                </Grid>
+            </Grid>
         </Border>
 
         <!-- MENU PRINCIPAL -->
@@ -210,8 +223,8 @@
                             Click="Championship_Click"
                             Style="{StaticResource MenuButtonStyle}" Cursor="Hand"/>
 
-                    
-                    
+
+
                     <Button Content="PARAMÈTRES" 
                            Tag="⚙️"
                            Style="{StaticResource MenuButtonStyle}"
@@ -224,43 +237,132 @@
         </ScrollViewer>
 
         <!-- FOOTER -->
-<Border Grid.Row="2" Background="#0f3460" Padding="15">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
-        
-        <!-- Version à gauche -->
-        <TextBlock Grid.Column="0"
-                  Text="Version 2.0.1" 
-                  FontSize="12" 
-                  Foreground="#666"
-                  VerticalAlignment="Center"/>
-        
-        <!-- Logo + Message au centre -->
-        <StackPanel Grid.Column="1"
-                   Orientation="Horizontal"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center">
-            
-            <TextBlock Text="Créez vos joueurs et structures de blinds avant de lancer un tournoi" 
-                      FontSize="13" 
-                      Foreground="#a0a0a0"
-                      VerticalAlignment="Center"/>
-        </StackPanel>
-        
-        <!-- Bouton à droite -->
-        <Button Grid.Column="2"
-               Content="Quitter" 
-               Click="Quit_Click"
-               HorizontalAlignment="Right"
-               Width="100" Height="35"
-               Background="#e94560"
-               Foreground="White"
-               FontSize="14"/>
-    </Grid>
-</Border>
+        <Border Grid.Row="2" Background="#0f3460" Padding="15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Version -->
+                <TextBlock Grid.Column="0"
+           Text="Version 2.0.1"
+           FontSize="12"
+           Foreground="#666"
+           VerticalAlignment="Center"/>
+
+                <!-- Bloc centré : saison + boutons horizontal -->
+                <StackPanel Grid.Column="1"
+            Orientation="Horizontal"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Margin="0,4">
+
+                    <TextBlock x:Name="txtCurrentSeasonName"
+               Text="Aucune saison active"
+               FontSize="12"
+               Foreground="#909090"
+               VerticalAlignment="Center"
+               Margin="0,0,16,0"
+               Opacity="0.9"/>
+
+                    <Button Click="QuickAccessTournament_Click"
+        Width="160" Height="32"
+        Margin="0,0,12,0"
+        Background="Transparent"
+        BorderBrush="#00ff88"  
+                        BorderThickness="1"
+        Cursor="Hand">
+                        
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="BorderLancer"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="12,4">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="🚀" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Manche suivante" 
+                                           FontSize="12" 
+                                           Foreground="#e0e0e0" 
+                                           VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="BorderLancer" Property="Background" Value="#00ff8818"/>
+                                                    <Setter TargetName="BorderLancer" Property="BorderBrush" Value="#00ff88a0"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="BorderLancer" Property="Background" Value="#00ff8830"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Classement -->
+                    <Button Click="QuickAccessChampionship_Click"
+            Width="140" Height="32"
+            Background="Transparent"
+            BorderBrush="#00ff88"
+            BorderThickness="1"
+            Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="BorderClassement"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="5"
+                                    Padding="12,4">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="📊" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Classement" 
+                                               FontSize="12" 
+                                               Foreground="#e0e0e0" 
+                                               VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="BorderClassement" Property="Background" Value="#00ff8818"/>
+                                                    <Setter TargetName="BorderClassement" Property="BorderBrush" Value="#00ff88a0"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="BorderClassement" Property="Background" Value="#00ff8830"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+
+                <!-- Quitter -->
+                <Button Grid.Column="2"
+        Content="Quitter"
+        Click="Quit_Click"
+        HorizontalAlignment="Right"
+        Width="100" Height="35"
+        Background="#e94560"
+        Foreground="White"
+        FontSize="14"/>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

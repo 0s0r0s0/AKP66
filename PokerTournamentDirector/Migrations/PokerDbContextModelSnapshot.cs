@@ -374,6 +374,9 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -387,15 +390,17 @@ namespace PokerTournamentDirector.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedDate = new DateTime(2026, 1, 27, 13, 11, 48, 87, DateTimeKind.Local).AddTicks(9295),
+                            CreatedDate = new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8099),
                             Description = "Structure classique pour home games",
+                            IsFavorite = false,
                             Name = "Standard (2h)"
                         },
                         new
                         {
                             Id = 2,
-                            CreatedDate = new DateTime(2026, 1, 27, 13, 11, 48, 87, DateTimeKind.Local).AddTicks(9460),
+                            CreatedDate = new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8245),
                             Description = "Structure rapide, niveaux de 12 minutes",
+                            IsFavorite = false,
                             Name = "Turbo (1h30)"
                         });
                 });
@@ -1221,6 +1226,9 @@ namespace PokerTournamentDirector.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("LastModified")
                         .HasColumnType("TEXT");

@@ -83,6 +83,7 @@
                     <StackPanel>
                         <TextBlock Text="📋 Paramètres Administratifs" Style="{StaticResource SectionTitleStyle}"/>
 
+                        <!-- REMPLACE cette section COMPLÈTE dans SettingsView.xaml -->
                         <!-- EXERCICE -->
                         <TextBlock Text="📅 Exercice Annuel" FontSize="16" FontWeight="Bold" Foreground="White" Margin="0,10,0,10"/>
 
@@ -94,32 +95,40 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Début de saison (jour/mois)" Style="{StaticResource LabelStyle}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="10"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" Text="{Binding FiscalYearStartDay}" Style="{StaticResource TextBoxStyle}"/>
-                                    <TextBlock Grid.Column="1" Text="/" Foreground="White" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="2" Text="{Binding FiscalYearStartMonth}" Style="{StaticResource TextBoxStyle}"/>
-                                </Grid>
+                                <TextBlock Text="Début de saison" Style="{StaticResource LabelStyle}"/>
+                                <DatePicker SelectedDate="{Binding FiscalYearStartDate, Mode=TwoWay}" 
+                    Height="40" 
+                    FontSize="14"
+                    FirstDayOfWeek="Monday"
+                    SelectedDateFormat="Short">
+                                    <DatePicker.Resources>
+                                        <Style TargetType="DatePickerTextBox">
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#0f3460"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Padding" Value="10"/>
+                                        </Style>
+                                    </DatePicker.Resources>
+                                </DatePicker>
                                 <TextBlock Text="Ex: 01/09 pour 1er septembre" Foreground="#666" FontSize="11" Margin="0,3,0,0"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Fin de saison (jour/mois)" Style="{StaticResource LabelStyle}"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="10"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" Text="{Binding FiscalYearEndDay}" Style="{StaticResource TextBoxStyle}"/>
-                                    <TextBlock Grid.Column="1" Text="/" Foreground="White" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="2" Text="{Binding FiscalYearEndMonth}" Style="{StaticResource TextBoxStyle}"/>
-                                </Grid>
+                                <TextBlock Text="Fin de saison" Style="{StaticResource LabelStyle}"/>
+                                <DatePicker SelectedDate="{Binding FiscalYearEndDate, Mode=TwoWay}" 
+                    Height="40" 
+                    FontSize="14"
+                    FirstDayOfWeek="Monday"
+                    SelectedDateFormat="Short">
+                                    <DatePicker.Resources>
+                                        <Style TargetType="DatePickerTextBox">
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#0f3460"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Padding" Value="10"/>
+                                        </Style>
+                                    </DatePicker.Resources>
+                                </DatePicker>
                                 <TextBlock Text="Ex: 30/06 pour 30 juin" Foreground="#666" FontSize="11" Margin="0,3,0,0"/>
                             </StackPanel>
                         </Grid>

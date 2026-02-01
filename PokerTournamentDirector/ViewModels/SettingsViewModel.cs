@@ -41,12 +41,13 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty] private int _defaultBreakDuration = 15;
 
         // Paramètres administratifs
-        [ObservableProperty] private int _fiscalYearStartDay = 1;
-        [ObservableProperty] private int _fiscalYearStartMonth = 9;
-        [ObservableProperty] private int _fiscalYearEndDay = 30;
-        [ObservableProperty] private int _fiscalYearEndMonth = 6;
+        [ObservableProperty]
+        private DateTime _fiscalYearStartDate = new DateTime(DateTime.Now.Year, 9, 1);
+
+        [ObservableProperty]
+        private DateTime _fiscalYearEndDate = new DateTime(DateTime.Now.Year + 1, 6, 30);
         [ObservableProperty] private int _administrativeDay = 1; // Lundi
-        [ObservableProperty] private decimal _annualFee = 150m;
+        [ObservableProperty] private int _annualFee = 100;
         [ObservableProperty] private int _trialPeriodWeeks = 4;
         [ObservableProperty] private string _installmentOptions = "2,3,4,6,10";
         [ObservableProperty] private bool _enableProrata = true;
@@ -92,11 +93,17 @@ namespace PokerTournamentDirector.ViewModels
             DefaultLevelDuration = settings.DefaultLevelDuration;
             DefaultBreakDuration = settings.DefaultBreakDuration;
 
-            // Administratifs
-            FiscalYearStartDay = settings.FiscalYearStartDay;
-            FiscalYearStartMonth = settings.FiscalYearStartMonth;
-            FiscalYearEndDay = settings.FiscalYearEndDay;
-            FiscalYearEndMonth = settings.FiscalYearEndMonth;
+            // NOUVEAU : Charger les dates depuis jour/mois
+            FiscalYearStartDate = new DateTime(
+                DateTime.Now.Year,
+                settings.FiscalYearStartMonth,
+                settings.FiscalYearStartDay);
+
+            FiscalYearEndDate = new DateTime(
+                FiscalYearStartDate.AddMonths(9).Year, // Année suivante probable
+                settings.FiscalYearEndMonth,
+                settings.FiscalYearEndDay);
+
             AdministrativeDay = settings.AdministrativeDay;
             AnnualFee = settings.AnnualFee;
             TrialPeriodWeeks = settings.TrialPeriodWeeks;
@@ -132,55 +139,49 @@ namespace PokerTournamentDirector.ViewModels
         [RelayCommand]
         private async Task SaveSettingsAsync()
         {
-            try
-            {
-                var settings = await _settingsService.GetSettingsAsync();
+            var settings = await _settingsService.GetSettingsAsync();
 
-                // Couleurs
-                settings.BackgroundColor = BackgroundColor;
-                settings.CardColor = CardColor;
-                settings.AccentColor = AccentColor;
-                settings.WarningColor = WarningColor;
-                settings.DangerColor = DangerColor;
+            // Couleurs
+            settings.BackgroundColor = BackgroundColor;
+            settings.CardColor = CardColor;
+            settings.AccentColor = AccentColor;
+            settings.WarningColor = WarningColor;
+            settings.DangerColor = DangerColor;
 
-                // Sons
-                settings.EnableSounds = EnableSounds;
-                settings.SoundOnPauseResume = SoundOnPauseResume;
-                settings.SoundOn60Seconds = SoundOn60Seconds;
-                settings.SoundOn10Seconds = SoundOn10Seconds;
-                settings.SoundOnCountdown = SoundOnCountdown;
-                settings.SoundOnStart = SoundOnStart;
-                settings.SoundOnWin = SoundOnWin;
-                settings.SoundOnKill = SoundOnKill;
-                settings.SoundOnUndoKill = SoundOnUndoKill;
-                settings.SoundOnBreak = SoundOnBreak;
-                settings.SoundOnRebuy = SoundOnRebuy;
-                settings.SoundOnLevelChange = SoundOnLevelChange;
+            // Sons
+            settings.EnableSounds = EnableSounds;
+            settings.SoundOnPauseResume = SoundOnPauseResume;
+            settings.SoundOn60Seconds = SoundOn60Seconds;
+            settings.SoundOn10Seconds = SoundOn10Seconds;
+            settings.SoundOnCountdown = SoundOnCountdown;
+            settings.SoundOnLevelChange = SoundOnLevelChange;
+            settings.SoundOnStart = SoundOnStart;
+            settings.SoundOnKill = SoundOnKill;
+            settings.SoundOnUndoKill = SoundOnUndoKill;
+            settings.SoundOnRebuy = SoundOnRebuy;
+            settings.SoundOnWin = SoundOnWin;
+            settings.SoundOnBreak = SoundOnBreak;
 
-                // Généraux
-                settings.DefaultLevelDuration = DefaultLevelDuration;
-                settings.DefaultBreakDuration = DefaultBreakDuration;
+            // Généraux
+            settings.DefaultLevelDuration = DefaultLevelDuration;
+            settings.DefaultBreakDuration = DefaultBreakDuration;
 
-                // Administratifs
-                settings.FiscalYearStartDay = FiscalYearStartDay;
-                settings.FiscalYearStartMonth = FiscalYearStartMonth;
-                settings.FiscalYearEndDay = FiscalYearEndDay;
-                settings.FiscalYearEndMonth = FiscalYearEndMonth;
-                settings.AdministrativeDay = AdministrativeDay;
-                settings.AnnualFee = AnnualFee;
-                settings.TrialPeriodWeeks = TrialPeriodWeeks;
-                settings.InstallmentOptions = InstallmentOptions;
-                settings.EnableProrata = EnableProrata;
-                settings.ProrataMode = ProrataMode;
+            // NOUVEAU : Sauvegarder jour/mois depuis DateTime
+            settings.FiscalYearStartDay = FiscalYearStartDate.Day;
+            settings.FiscalYearStartMonth = FiscalYearStartDate.Month;
+            settings.FiscalYearEndDay = FiscalYearEndDate.Day;
+            settings.FiscalYearEndMonth = FiscalYearEndDate.Month;
 
-                await _settingsService.SaveSettingsAsync(settings);
+            settings.AdministrativeDay = AdministrativeDay;
+            settings.AnnualFee = AnnualFee;
+            settings.TrialPeriodWeeks = TrialPeriodWeeks;
+            settings.InstallmentOptions = InstallmentOptions;
+            settings.EnableProrata = EnableProrata;
+            settings.ProrataMode = ProrataMode;
 
-                CustomMessageBox.ShowSuccess("Paramètres sauvegardés !", "Succès");
-            }
-            catch (System.Exception ex)
-            {
-                CustomMessageBox.ShowError($"Erreur : {ex.Message}", "Erreur");
-            }
+            await _settingsService.SaveSettingsAsync(settings);
+
+            CustomMessageBox.ShowSuccess("✅ Paramètres sauvegardés avec succès !", "Succès");
         }
 
         [RelayCommand]

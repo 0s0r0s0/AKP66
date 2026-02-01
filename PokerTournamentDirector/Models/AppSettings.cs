@@ -44,7 +44,7 @@ namespace PokerTournamentDirector.Models
         public int AdministrativeDay { get; set; } = 1; // Lundi (DayOfWeek)
 
         // Cotisation
-        public decimal AnnualFee { get; set; } = 150m; // Montant cotisation annuelle
+        public int AnnualFee { get; set; } = 100; // Montant cotisation annuelle
         public int TrialPeriodWeeks { get; set; } = 4; // Période d'essai en semaines
 
         // Paiements échelonnés

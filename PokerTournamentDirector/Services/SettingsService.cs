@@ -72,7 +72,7 @@ namespace PokerTournamentDirector.Services
             settings.FiscalYearEndMonth = 6;
             settings.FiscalYearEndDay = 30;
             settings.AdministrativeDay = 1;
-            settings.AnnualFee = 150m;
+            settings.AnnualFee = 100;
             settings.TrialPeriodWeeks = 4;
             settings.InstallmentOptions = "2,3,4,6,10";
             settings.EnableProrata = true;
