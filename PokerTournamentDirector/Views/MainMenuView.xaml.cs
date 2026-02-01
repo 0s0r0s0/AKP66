@@ -7,6 +7,8 @@ using PokerTournamentDirector.Services;
 using PokerTournamentDirector.ViewModels;
 using System.Linq;
 using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace PokerTournamentDirector.Views
 {
@@ -53,8 +55,46 @@ namespace PokerTournamentDirector.Views
 
                 if (birthdayPlayers.Any())
                 {
-                    var names = string.Join("& ", birthdayPlayers);
-                    txtSubtitle.Text = $"🎂 Joyeux anniversaire {names}🎈";
+                    var names = string.Join(" & ", birthdayPlayers);
+
+                    // TextBlock avec Inlines pour différentes couleurs
+                    txtSubtitle.Inlines.Clear();
+
+                    // Gâteau en jaune/orange
+                    txtSubtitle.Inlines.Add(new Run("🎂")
+                    {
+                        Foreground = new SolidColorBrush(Colors.Gold),
+                        FontSize = 22
+                    });
+
+                    // Texte "Joyeux anniversaire" en blanc
+                    txtSubtitle.Inlines.Add(new Run($" JOYEUX ANNIVERSAIRE {names.ToUpper()}")
+                    {
+                        Foreground = new SolidColorBrush(Colors.White)
+                    });
+
+                    // Ballons multicolores
+                    var balloonEmojis = new[] { "🎈", "🎉", "🎊", "🎁" };
+                    var balloonColors = new[]
+                    {
+        Colors.Red,
+        Colors.LimeGreen,
+        Colors.DodgerBlue,
+        Colors.Violet
+    };
+
+                    for (int i = 0; i < 4; i++) // Ajouter 2 ballons pour le fun
+                    {
+                        txtSubtitle.Inlines.Add(new Run($" {balloonEmojis[i]}")
+                        {
+                            Foreground = new SolidColorBrush(balloonColors[i]),
+                            FontSize = 22
+                        });
+                    }
+
+                    // Style général
+                    txtSubtitle.FontSize = 20;
+                    txtSubtitle.FontWeight = FontWeights.SemiBold;
                 }
                 else
                 {
