@@ -29,6 +29,7 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty] private bool _isEditing = false;
         [ObservableProperty] private string _editName = string.Empty;
         [ObservableProperty] private string _editNickname = string.Empty;
+        [ObservableProperty] private DateTime? _editBirthDate;
         [ObservableProperty] private string _editEmail = string.Empty;
         [ObservableProperty] private string _editPhone = string.Empty;
         [ObservableProperty] private string _editCity = string.Empty;
@@ -134,6 +135,7 @@ namespace PokerTournamentDirector.ViewModels
             SelectedPlayer = null;
             EditName = string.Empty;
             EditNickname = string.Empty;
+            EditBirthDate = DateTime.Now;
             EditEmail = string.Empty;
             EditPhone = string.Empty;
             EditCity = string.Empty;
@@ -152,6 +154,7 @@ namespace PokerTournamentDirector.ViewModels
 
             EditName = SelectedPlayer.Name;
             EditNickname = SelectedPlayer.Nickname ?? string.Empty;
+            EditBirthDate = SelectedPlayer.BirthDate;
             EditEmail = SelectedPlayer.Email ?? string.Empty;
             EditPhone = SelectedPlayer.Phone ?? string.Empty;
             EditCity = SelectedPlayer.City ?? string.Empty;
@@ -251,6 +254,7 @@ namespace PokerTournamentDirector.ViewModels
                     {
                         RegistrationDate = DateTime.Now,
                         Name = EditName,
+                        BirthDate = EditBirthDate,
                         Nickname = string.IsNullOrWhiteSpace(EditNickname) ? null : EditNickname,
                         Email = string.IsNullOrWhiteSpace(EditEmail) ? null : EditEmail,
                         Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone,
@@ -272,6 +276,7 @@ namespace PokerTournamentDirector.ViewModels
                     // Mise à jour des infos de base
                     player.Name = EditName;
                     player.Nickname = string.IsNullOrWhiteSpace(EditNickname) ? null : EditNickname;
+                    player.BirthDate = EditBirthDate;
                     player.Email = string.IsNullOrWhiteSpace(EditEmail) ? null : EditEmail;
                     player.Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone;
                     player.City = string.IsNullOrWhiteSpace(EditCity) ? null : EditCity;

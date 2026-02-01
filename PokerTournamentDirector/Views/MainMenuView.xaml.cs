@@ -19,7 +19,53 @@ namespace PokerTournamentDirector.Views
         {
             InitializeComponent();
             _serviceProvider = serviceProvider;
-            Loaded += async (s, e) => await LoadCurrentSeasonInfoAsync();
+            Loaded += async (s, e) =>
+            {
+                await LoadCurrentSeasonInfoAsync();
+                await CheckBirthdaysAsync();
+            };
+        }
+
+        private async Task CheckBirthdaysAsync()
+        {
+            try
+            {
+                var context = _serviceProvider.GetRequiredService<PokerDbContext>();
+                var today = DateTime.Now.Date;
+                var sixDaysAgo = today.AddDays(-6);
+
+                // Récupérer tous les joueurs avec date de naissance
+                var players = await context.Players
+                    .Where(p => p.BirthDate.HasValue && p.IsActive)
+                    .ToListAsync();
+
+                var birthdayPlayers = players
+                    .Where(p =>
+                    {
+                        var birthDate = p.BirthDate!.Value;
+                        var thisYearBirthday = new DateTime(today.Year, birthDate.Month, birthDate.Day);
+
+                        // Vérifier si l'anniversaire est entre aujourd'hui et les 6 derniers jours
+                        return thisYearBirthday >= sixDaysAgo && thisYearBirthday <= today;
+                    })
+                    .Select(p => p.Name)
+                    .ToList();
+
+                if (birthdayPlayers.Any())
+                {
+                    var names = string.Join("& ", birthdayPlayers);
+                    txtSubtitle.Text = $"🎂 Joyeux anniversaire {names}🎈";
+                }
+                else
+                {
+                    txtSubtitle.Text = "Los Reneg'As ¡Hasta la victoria siempre!";
+                }
+            }
+            catch
+            {
+                // En cas d'erreur, garder le texte par défaut
+                txtSubtitle.Text = "Los Reneg'As ¡Hasta la victoria siempre!";
+            }
         }
 
         private async void NewTournament_Click(object sender, RoutedEventArgs e)

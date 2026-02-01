@@ -259,6 +259,13 @@
                             <TextBlock Text="Pseudo" Foreground="#a0a0a0" FontSize="13" Margin="0,12,0,5"/>
                             <TextBox Text="{Binding EditNickname}" Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2" Padding="10" Height="38" FontSize="14"/>
 
+                                <TextBlock Text="Date de naissance" Foreground="#a0a0a0" FontSize="13"/>
+                                <DatePicker SelectedDate="{Binding EditBirthDate}" 
+                Height="40" 
+                FontSize="14"
+                FirstDayOfWeek="Monday"/>
+
+
                             <TextBlock Text="Téléphone" Foreground="#a0a0a0" FontSize="13" Margin="0,12,0,5"/>
                             <TextBox Text="{Binding EditPhone}" Background="#0f3460" Foreground="White" BorderBrush="#00ff88" BorderThickness="2" Padding="10" Height="38" FontSize="14"/>
 

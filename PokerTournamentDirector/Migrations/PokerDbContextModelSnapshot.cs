@@ -30,8 +30,8 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<int>("AdministrativeDay")
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("AnnualFee")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("AnnualFee")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("BackgroundColor")
                         .IsRequired()
@@ -390,7 +390,7 @@ namespace PokerTournamentDirector.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedDate = new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8099),
+                            CreatedDate = new DateTime(2026, 2, 1, 2, 23, 38, 641, DateTimeKind.Local).AddTicks(2145),
                             Description = "Structure classique pour home games",
                             IsFavorite = false,
                             Name = "Standard (2h)"
@@ -398,7 +398,7 @@ namespace PokerTournamentDirector.Migrations
                         new
                         {
                             Id = 2,
-                            CreatedDate = new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8245),
+                            CreatedDate = new DateTime(2026, 2, 1, 2, 23, 38, 641, DateTimeKind.Local).AddTicks(2301),
                             Description = "Structure rapide, niveaux de 12 minutes",
                             IsFavorite = false,
                             Name = "Turbo (1h30)"
@@ -776,6 +776,9 @@ namespace PokerTournamentDirector.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("BirthDate")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("City")
                         .HasMaxLength(100)

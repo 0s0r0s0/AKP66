@@ -45,6 +45,8 @@ namespace PokerTournamentDirector.Models
         [MaxLength(100)]
         public string? City { get; set; }
 
+        public DateTime? BirthDate { get; set; }
+
         public string? PhotoPath { get; set; }
         public string? Notes { get; set; }
 

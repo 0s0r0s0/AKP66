@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PokerTournamentDirector.Migrations
 {
     /// <inheritdoc />
-    public partial class AddFavoriteFlags : Migration
+    public partial class AddBirthDateToPlayer : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -43,7 +43,7 @@ namespace PokerTournamentDirector.Migrations
                     FiscalYearEndMonth = table.Column<int>(type: "INTEGER", nullable: false),
                     FiscalYearEndDay = table.Column<int>(type: "INTEGER", nullable: false),
                     AdministrativeDay = table.Column<int>(type: "INTEGER", nullable: false),
-                    AnnualFee = table.Column<decimal>(type: "TEXT", nullable: false),
+                    AnnualFee = table.Column<int>(type: "INTEGER", nullable: false),
                     TrialPeriodWeeks = table.Column<int>(type: "INTEGER", nullable: false),
                     InstallmentOptions = table.Column<string>(type: "TEXT", nullable: false),
                     EnableProrata = table.Column<bool>(type: "INTEGER", nullable: false),
@@ -143,6 +143,7 @@ namespace PokerTournamentDirector.Migrations
                     Email = table.Column<string>(type: "TEXT", maxLength: 150, nullable: true),
                     Phone = table.Column<string>(type: "TEXT", maxLength: 20, nullable: true),
                     City = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
+                    BirthDate = table.Column<DateTime>(type: "TEXT", nullable: true),
                     PhotoPath = table.Column<string>(type: "TEXT", nullable: true),
                     Notes = table.Column<string>(type: "TEXT", nullable: true),
                     RegistrationDate = table.Column<DateTime>(type: "TEXT", nullable: false),
@@ -585,8 +586,8 @@ namespace PokerTournamentDirector.Migrations
                 columns: new[] { "Id", "CreatedDate", "Description", "IsFavorite", "Name" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8099), "Structure classique pour home games", false, "Standard (2h)" },
-                    { 2, new DateTime(2026, 1, 31, 11, 43, 24, 346, DateTimeKind.Local).AddTicks(8245), "Structure rapide, niveaux de 12 minutes", false, "Turbo (1h30)" }
+                    { 1, new DateTime(2026, 2, 1, 2, 23, 38, 641, DateTimeKind.Local).AddTicks(2145), "Structure classique pour home games", false, "Standard (2h)" },
+                    { 2, new DateTime(2026, 2, 1, 2, 23, 38, 641, DateTimeKind.Local).AddTicks(2301), "Structure rapide, niveaux de 12 minutes", false, "Turbo (1h30)" }
                 });
 
             migrationBuilder.InsertData(
