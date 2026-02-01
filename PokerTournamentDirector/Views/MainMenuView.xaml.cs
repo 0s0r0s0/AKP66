@@ -15,7 +15,7 @@ namespace PokerTournamentDirector.Views
     public partial class MainMenuView : Window
     {
         private readonly IServiceProvider _serviceProvider;
-        private AudioService audioService;
+        private AudioService? audioService;
 
         public MainMenuView(IServiceProvider serviceProvider)
         {

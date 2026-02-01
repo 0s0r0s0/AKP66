@@ -30,7 +30,7 @@ namespace PokerTournamentDirector.Views.Dialogs
     {
         private readonly TableManagementService _tableService;
         private readonly int _tournamentId;
-        private WrapPanel _tablesPanel;
+        private WrapPanel _tablesPanel = null!;
 
         public TableLayoutDialog(TableManagementService tableService, int tournamentId)
         {

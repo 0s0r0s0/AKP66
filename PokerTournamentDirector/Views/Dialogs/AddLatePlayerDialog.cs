@@ -30,8 +30,8 @@ namespace PokerTournamentDirector.Views.Dialogs
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly int _tournamentId;
-        private ListBox _playerList;
-        private TextBox _searchBox;
+        private ListBox _playerList = null!;
+        private TextBox _searchBox = null!;
         private List<PlayerDisplayItem> _allAvailablePlayers;
 
         public int? SelectedPlayerId { get; private set; }
@@ -40,8 +40,8 @@ namespace PokerTournamentDirector.Views.Dialogs
         private class PlayerDisplayItem
         {
             public int Id { get; set; }
-            public string Name { get; set; }
-            public string Nickname { get; set; }
+            public string Name { get; set; } = string.Empty; 
+            public string Nickname { get; set; } = string.Empty; 
             public string DisplayText => string.IsNullOrEmpty(Nickname) ? Name : $"{Name} (@{Nickname})";
         }
 
@@ -527,3 +527,5 @@ namespace PokerTournamentDirector.Views.Dialogs
         }
     }
 }
+
+

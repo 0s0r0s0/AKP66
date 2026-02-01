@@ -9,10 +9,10 @@ namespace PokerTournamentDirector.Views.Dialogs
     public class EditBlindsAndTimeDialog : Window
     {
         private readonly TournamentTimerViewModel _viewModel;
-        private TextBox _txtSmallBlind;
-        private TextBox _txtBigBlind;
-        private TextBox _txtAnte;
-        private TextBlock _txtCurrentTime;
+        private TextBox _txtSmallBlind = null!;
+        private TextBox _txtBigBlind = null!;
+        private TextBox _txtAnte = null!;
+        private TextBlock _txtCurrentTime = null!;
         private int _timeAdjustment = 0;
 
         public EditBlindsAndTimeDialog(TournamentTimerViewModel viewModel)
@@ -269,3 +269,4 @@ namespace PokerTournamentDirector.Views.Dialogs
         }
     }
 }
+
