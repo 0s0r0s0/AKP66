@@ -34,6 +34,15 @@ namespace PokerTournamentDirector.Models
         public int DefaultLevelDuration { get; set; } = 20;
         public int DefaultBreakDuration { get; set; } = 15;
 
+        // ========= Configuration SMTP ==========
+        public string SmtpServer { get; set; } = "smtp.gmail.com";
+        public int SmtpPort { get; set; } = 587;
+        public bool SmtpEnableSsl { get; set; } = true;
+        public string SmtpUsername { get; set; } = "ak66poker@gmail.com"; // ton email Gmail
+        public string SmtpPassword { get; set; } = "gcik ordc xbqp aode"; // mot de passe d'application
+        public string SmtpFromEmail { get; set; } = "ak66poker@gmail.com";
+        public string SmtpFromName { get; set; } = "AK-66 POKER CLUB";
+
         // ========== NOUVEAUX PARAMÈTRES ADMINISTRATIFS ==========
 
         // Exercice

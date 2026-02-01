@@ -36,6 +36,15 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty] private bool _soundOnUndoKill = true;
         [ObservableProperty] private bool _soundOnRebuy = true;
 
+        // MAIL
+        [ObservableProperty] private string _smtpServer = "smtp.gmail.com";
+        [ObservableProperty] private int _smtpPort = 587;
+        [ObservableProperty] private bool _smtpEnableSsl = true;
+        [ObservableProperty] private string _smtpUsername = "";
+        [ObservableProperty] private string _smtpPassword = "";
+        [ObservableProperty] private string _smtpFromEmail = "";
+        private readonly EmailService _emailService;
+
         // Paramètres généraux
         [ObservableProperty] private int _defaultLevelDuration = 20;
         [ObservableProperty] private int _defaultBreakDuration = 15;
@@ -58,10 +67,11 @@ namespace PokerTournamentDirector.ViewModels
         [ObservableProperty] private Brush _cardBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#16213e")!);
         [ObservableProperty] private Brush _accentBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00ff88")!);
 
-        public SettingsViewModel(SettingsService settingsService, AudioService audioService)
+        public SettingsViewModel(SettingsService settingsService, AudioService audioService, EmailService emailService)
         {
             _settingsService = settingsService;
             _audioService = audioService;
+            _emailService = emailService;
         }
 
         public async Task InitializeAsync()
@@ -88,6 +98,14 @@ namespace PokerTournamentDirector.ViewModels
             SoundOnRebuy = settings.SoundOnRebuy;
             SoundOnWin = settings.SoundOnWin;
             SoundOnBreak = settings.SoundOnBreak;
+
+            // Mails
+            SmtpServer = settings.SmtpServer;
+            SmtpPort = settings.SmtpPort;
+            SmtpEnableSsl = settings.SmtpEnableSsl;
+            SmtpUsername = settings.SmtpUsername;
+            SmtpPassword = settings.SmtpPassword;
+            SmtpFromEmail = settings.SmtpFromEmail;
 
             // Généraux
             DefaultLevelDuration = settings.DefaultLevelDuration;
@@ -162,6 +180,14 @@ namespace PokerTournamentDirector.ViewModels
             settings.SoundOnWin = SoundOnWin;
             settings.SoundOnBreak = SoundOnBreak;
 
+            // Mails
+            settings.SmtpServer = SmtpServer;
+            settings.SmtpPort = SmtpPort;
+            settings.SmtpEnableSsl = SmtpEnableSsl;
+            settings.SmtpUsername = SmtpUsername;
+            settings.SmtpPassword = SmtpPassword;
+            settings.SmtpFromEmail = SmtpFromEmail;
+
             // Généraux
             settings.DefaultLevelDuration = DefaultLevelDuration;
             settings.DefaultBreakDuration = DefaultBreakDuration;
@@ -202,6 +228,17 @@ namespace PokerTournamentDirector.ViewModels
             {
                 PlaySound("test.mp3");
             }
+        }
+
+        [RelayCommand]
+        private async Task TestEmailConnection()
+        {
+            var (success, message) = await _emailService.TestConnectionAsync();
+
+            if (success)
+                CustomMessageBox.ShowSuccess(message, "Test Email");
+            else
+                CustomMessageBox.ShowError(message, "Erreur Email");
         }
     }
 }

@@ -52,6 +52,7 @@ namespace PokerTournamentDirector
             services.AddScoped<TournamentLogService>();
             services.AddTransient<QuickTournamentLaunchViewModel>();
             services.AddTransient<TableManagementService>();
+            services.AddSingleton<EmailService>();
 
             // ViewModels
             services.AddTransient<TournamentTimerViewModel>();

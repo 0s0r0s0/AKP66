@@ -222,7 +222,8 @@ namespace PokerTournamentDirector.Views
         {
             var settingsService = _serviceProvider.GetRequiredService<SettingsService>();
             var audioService = _serviceProvider.GetRequiredService<AudioService>();
-            var viewModel = new SettingsViewModel(settingsService, audioService);
+            var emailService = _serviceProvider.GetRequiredService<EmailService>();
+            var viewModel = new SettingsViewModel(settingsService, audioService, emailService);
 
             var settingsWindow = new SettingsView(viewModel);
             settingsWindow.ShowDialog();
